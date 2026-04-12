@@ -160,12 +160,24 @@ function lazyLoad(secId) {
       // ready on user action
       break;
     case 'soil': {
-      // Pre-fill dropdown from session but don't auto-render
+      // Pre-fill dropdown from session and auto-render immediately
       const s = getSession();
       const profile = (() => { try { return JSON.parse(localStorage.getItem('kr_farmer_profile')); } catch { return null; } })();
       const cropRaw = (profile?.crops?.[0] || s?.crop || '').replace(/[^a-zA-Z]/g,'').toLowerCase().trim();
+      // Map common aliases to SOIL_DATA keys
+      const cropAliasMap = { rice:'paddy', corn:'maize', sugarcane:'sugarcane', chili:'chilli', pepper:'chilli' };
+      const cropKey = SOIL_DATA[cropRaw] ? cropRaw : (cropAliasMap[cropRaw] || 'paddy');
       const sel = document.getElementById('soil-crop-sel');
-      if (sel && cropRaw && SOIL_DATA[cropRaw]) sel.value = cropRaw;
+      if (sel) {
+        sel.value = cropKey;
+        updateSoilGuide();
+      } else {
+        // DOM not ready yet — retry once after paint
+        requestAnimationFrame(() => {
+          const s2 = document.getElementById('soil-crop-sel');
+          if (s2) { s2.value = cropKey; updateSoilGuide(); }
+        });
+      }
       break;
     }
     case 'calendar':
@@ -1216,6 +1228,11 @@ function updateSoilGuide() {
   const sel = document.getElementById('soil-crop-sel');
   const content = document.getElementById('soil-guide-content');
   if (!sel || !content) return;
+  if (typeof SOIL_DATA === 'undefined') {
+    content.innerHTML = '<div style="color:rgba(134,239,172,.4);font-size:.85rem;padding:12px 0">Loading data…</div>';
+    setTimeout(updateSoilGuide, 200);
+    return;
+  }
 
   const crop = sel.value || 'paddy';
   const d = SOIL_DATA[crop] || SOIL_DATA.paddy;
