@@ -16,13 +16,27 @@ Diagnose crop diseases in under 2 seconds · 54 diseases · 9 crops · Multiling
 
 ---
 
-## What is it?
+## The Problem
 
-Krishi Rakshak ("Crop Protector") is a full-stack web + mobile platform that lets any Indian farmer photograph a diseased leaf and get an instant AI diagnosis — with severity rating, treatment protocol, and prevention strategy — in under 2 seconds.
+₹50,000 crore is lost to crop disease every year in India. Most farmers have no fast, affordable way to identify what's wrong — let alone get treatment advice in their own language.
 
-Beyond disease detection it bundles everything a farmer needs in one place: hyper-local weather, live mandi prices, irrigation planning, PMFBY insurance guidance, KCC loan info, a crop calendar, a disease outbreak map, a community forum, and a 24/7 multilingual AI advisor (Krishi Mitra).
+## What is Krishi Rakshak?
+
+Krishi Rakshak ("Crop Protector") is a full-stack web + mobile platform that lets any farmer photograph a diseased leaf and get an instant AI diagnosis — with severity rating, treatment protocol, and prevention strategy — in under 2 seconds.
+
+Beyond disease detection it bundles everything a farmer needs in one place: hyper-local weather, live mandi prices, irrigation planning, PMFBY insurance guidance, KCC loan info, a crop calendar, a community forum, and a 24/7 multilingual AI advisor (Krishi Mitra).
 
 The frontend is a zero-build-step PWA (plain HTML/CSS/JS) that works on low-bandwidth rural connections and can be installed on any Android or iOS home screen. A Flutter mobile app is included for native camera access.
+
+---
+
+## How It Works
+
+| Step | What happens |
+|---|---|
+| 📸 **Scan** | Photograph a diseased leaf using your phone camera or upload from gallery |
+| 🧠 **Diagnose** | MobileNetV2 AI identifies the disease with a confidence score in under 2 seconds |
+| 💊 **Act** | Get treatment steps, pesticide names, and prevention tips in your language |
 
 ---
 
@@ -80,26 +94,81 @@ All 9 crops also have a **Healthy** class. Predictions below 40% confidence retu
 
 ---
 
+## Project Structure
+
+```
+Krishi_Rakshak/
+├── backend/
+│   ├── main.py              # FastAPI app — all API routes
+│   ├── remedies.py          # Treatment database for all 54 diseases
+│   ├── requirements.txt
+│   └── requirements-dev.txt
+├── frontend/
+│   ├── index.html           # Public landing page
+│   ├── login.html           # Farmer auth
+│   ├── home.html            # Post-login SPA dashboard
+│   ├── detect.html          # Disease detection (single + batch)
+│   ├── weather.html         # Weather forecast
+│   ├── market.html          # Mandi prices
+│   ├── soil.html            # Soil / fertiliser calculator
+│   ├── irrigation.html      # Irrigation planner
+│   ├── insurance.html       # PMFBY insurance wizard
+│   ├── loans.html           # Kisan loan guide
+│   ├── finance.html         # Farm finance overview
+│   ├── tracker.html         # Disease history
+│   ├── calendar.html        # Crop calendar
+│   ├── map.html             # Outbreak heatmap
+│   ├── forum.html           # Community forum
+│   ├── chat.html            # Full-page AI chat
+│   ├── dashboard.html       # Sidebar dashboard layout
+│   ├── nav.js               # Shared nav + cursor + chatbot injector
+│   ├── home-app.js          # SPA dashboard logic
+│   ├── app.js               # Landing page logic
+│   ├── detect.js            # Detect page logic
+│   ├── soil.js              # Soil calculator logic
+│   ├── finance.js           # Finance page logic
+│   ├── chat-bubble.js       # Sidebar AI widget (login-gated)
+│   ├── bg.js                # Three.js background animation
+│   ├── intelligence.js      # AI intelligence helpers
+│   ├── onboarding.js        # Farmer onboarding wizard
+│   ├── router.js            # Client-side routing
+│   ├── config.js            # API base URL config
+│   ├── style.css / nav.css / dashboard.css
+│   ├── sw.js                # Service worker (PWA)
+│   ├── manifest.json        # PWA manifest
+│   ├── disease-translations.json
+│   └── static/
+│       ├── labels.json
+│       └── tfjs_model/      # TensorFlow.js model (client-side inference)
+├── mobile/
+│   └── krishi_rakshak_app/  # Flutter mobile app
+│       └── lib/
+│           ├── main.dart
+│           ├── screens/     # home_screen.dart, result_screen.dart
+│           └── services/    # api_service.dart
+├── forum_uploads/           # Uploaded forum images (runtime)
+├── tests/
+│   └── test_api.py
+├── best_model.keras         # Trained MobileNetV2
+├── class_names.json         # 54 class labels
+├── krishi_history.db        # SQLite database (runtime)
+├── Dockerfile
+└── docker-compose.yml
+```
+
+---
+
 ## Quick Start
 
 ### Prerequisites
 
 - Python 3.11+
 - `best_model.keras` in the repo root (the trained model)
-- An Anthropic API key for the chatbot
+- An Anthropic API key for the AI chatbot
 
-### 1. Clone & configure
+### 1. Configure environment
 
-```bash
-git clone https://github.com/your-org/krishi-rakshak.git
-cd krishi-rakshak
-
-# Copy and fill in your keys
-cp .env.example .env
-# Edit .env — set ANTHROPIC_API_KEY
-```
-
-`.env` format:
+Create a `.env` file in the repo root:
 
 ```env
 ANTHROPIC_API_KEY=sk-ant-...
@@ -123,8 +192,6 @@ API docs available at [http://localhost:8000/docs](http://localhost:8000/docs)
 ```bash
 # From the repo root
 python -m http.server 3000
-# or
-npx serve .
 ```
 
 Open [http://localhost:3000/frontend/index.html](http://localhost:3000/frontend/index.html)
@@ -135,60 +202,15 @@ Open [http://localhost:3000/frontend/index.html](http://localhost:3000/frontend/
 docker-compose up --build
 ```
 
-The API runs on port 8000. The SQLite database is mounted as a volume so data persists across restarts.
-
----
-
-## Project Structure
-
-```
-Krishi_Rakshak/
-├── backend/
-│   ├── main.py              # FastAPI app — all API routes (2200+ lines)
-│   ├── remedies.py          # Treatment database for all 54 diseases
-│   └── requirements.txt
-├── frontend/
-│   ├── index.html           # Public landing page
-│   ├── login.html           # Farmer auth
-│   ├── home.html            # Post-login dashboard
-│   ├── detect.html          # Disease detection (single + batch)
-│   ├── weather.html         # Weather forecast
-│   ├── market.html          # Mandi prices
-│   ├── soil.html            # Soil / fertiliser calculator
-│   ├── irrigation.html      # Irrigation planner
-│   ├── insurance.html       # PMFBY insurance wizard
-│   ├── loans.html           # Kisan loan guide
-│   ├── tracker.html         # Disease history
-│   ├── calendar.html        # Crop calendar
-│   ├── map.html             # Outbreak heatmap
-│   ├── forum.html           # Community forum
-│   ├── chat.html            # Full-page AI chat
-│   ├── nav.js               # Shared nav + cursor + chatbot injector
-│   ├── chat-bubble.js       # Sidebar AI widget (login-gated)
-│   ├── app.js               # Landing page logic
-│   ├── style.css / nav.css / dashboard.css
-│   ├── sw.js                # Service worker (PWA)
-│   └── manifest.json
-├── mobile/
-│   └── krishi_rakshak_app/  # Flutter mobile app
-├── tests/
-│   └── test_api.py
-├── best_model.keras         # Trained MobileNetV2
-├── class_names.json         # 54 class labels
-├── trainallcrops_fixed.py   # Training script
-├── Dockerfile
-└── docker-compose.yml
-```
-
 ---
 
 ## API Reference
 
-The full interactive docs are at `/docs` when the backend is running. Key endpoints:
+Key endpoints (full interactive docs at `/docs`):
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/health` | Health check |
+| `GET` | `/health` | Health check + model status |
 | `POST` | `/predict` | Single image diagnosis |
 | `POST` | `/batch-predict` | Batch diagnosis (up to 10 images) |
 | `GET` | `/history/{session_id}` | Scan history with trend |
@@ -208,21 +230,17 @@ The full interactive docs are at `/docs` when the backend is running. Key endpoi
 | Variable | Required | Description |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | ✅ Yes | Powers the chatbot, daily tips, and forum moderation |
-| `DATAGOV_KEY` | ❌ Optional | [data.gov.in](https://data.gov.in) key for live mandi prices. Demo data is shown if not set. |
+| `DATAGOV_KEY` | ❌ Optional | data.gov.in key for live mandi prices. Demo data shown if not set. |
 
 ---
 
 ## Mobile App
-
-A Flutter app lives in `mobile/krishi_rakshak_app/`. It uses the same FastAPI backend.
 
 ```bash
 cd mobile/krishi_rakshak_app
 flutter pub get
 flutter run
 ```
-
-Key packages: `http`, `image_picker`, `permission_handler`, `cached_network_image`, `lottie`, `google_fonts`.
 
 ---
 
@@ -236,17 +254,11 @@ pytest tests/test_api.py -v
 
 ## Design Notes
 
-- **No build step** — the frontend is plain HTML/CSS/JS. Open the files directly or serve them statically.
+- **No build step** — the frontend is plain HTML/CSS/JS. Serve statically, no toolchain needed.
 - **PWA** — installable on Android/iOS via the browser. Service worker handles offline caching.
-- **Privacy** — outbreak map coordinates are rounded to 2 decimal places (~1km) before storage. No individual farm locations are ever stored or returned.
-- **Multilingual** — the AI chatbot responds in the farmer's chosen language (Hindi, English, Telugu, Tamil, Marathi, Bengali).
-- **Offline-first model** — the MobileNetV2 model can be exported to TensorFlow.js (`frontend/tfjs_model/`) for fully client-side inference with no backend required.
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE) for details.
+- **Privacy** — outbreak map coordinates are rounded to ~1km before storage. No individual farm locations stored.
+- **Multilingual** — AI chatbot responds in the farmer's chosen language (Hindi, English, Telugu, Tamil, Marathi, Bengali).
+- **Offline-first model** — MobileNetV2 exported to TensorFlow.js in `frontend/static/tfjs_model/` for fully client-side inference.
 
 ---
 

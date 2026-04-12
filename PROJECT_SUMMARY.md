@@ -18,14 +18,14 @@ The platform is designed for low-bandwidth rural environments, ships as a Progre
 ```
 Krishi_Rakshak/
 ├── backend/
-│   ├── main.py              # FastAPI application (2200+ lines, all API routes)
+│   ├── main.py              # FastAPI application (all API routes)
 │   ├── remedies.py          # Disease treatment database (54 diseases)
 │   ├── requirements.txt     # Python dependencies
 │   └── requirements-dev.txt
 ├── frontend/
 │   ├── index.html           # Public landing page
 │   ├── login.html           # Farmer login / register
-│   ├── home.html            # Post-login dashboard
+│   ├── home.html            # Post-login SPA dashboard (scan, weather, market, AI chat, tools)
 │   ├── detect.html          # Disease detection (single + batch)
 │   ├── weather.html         # Hyper-local weather forecast
 │   ├── market.html          # Live mandi prices + trend chart
@@ -35,15 +35,20 @@ Krishi_Rakshak/
 │   ├── loans.html           # Kisan credit / loan guide
 │   ├── finance.html         # Farm finance overview
 │   ├── tracker.html         # Disease history tracker
-│   ├── calendar.html        # Crop calendar
+│   ├── calendar.html        # Crop growth stage calendar
 │   ├── map.html             # Disease outbreak heatmap
 │   ├── forum.html           # Community Q&A forum
 │   ├── chat.html            # Full-page Krishi Mitra AI chat
-│   ├── dashboard.html       # Farmer dashboard (sidebar layout)
+│   ├── dashboard.html       # Sidebar dashboard layout
 │   ├── app.js               # Landing page logic (Three.js, upload, results)
+│   ├── home-app.js          # SPA dashboard logic (scan, weather, market, chat, tools)
 │   ├── detect.js            # Detect page logic (single + batch)
 │   ├── soil.js              # Soil calculator logic
 │   ├── finance.js           # Finance page logic
+│   ├── bg.js                # Three.js animated background
+│   ├── intelligence.js      # AI intelligence helpers
+│   ├── onboarding.js        # Farmer onboarding wizard
+│   ├── router.js            # Client-side routing
 │   ├── nav.js               # Shared nav injector + cursor + chatbot loader
 │   ├── chat-bubble.js       # Sidebar AI chat widget (login-gated)
 │   ├── config.js            # API base URL config
@@ -52,24 +57,28 @@ Krishi_Rakshak/
 │   ├── dashboard.css        # Dashboard / auth page styles
 │   ├── sw.js                # Service worker (PWA offline)
 │   ├── manifest.json        # PWA manifest
-│   └── disease-translations.json
+│   ├── disease-translations.json
+│   └── static/
+│       ├── labels.json
+│       └── tfjs_model/      # TensorFlow.js model for client-side inference
 ├── mobile/
 │   └── krishi_rakshak_app/  # Flutter mobile app
-├── Dataset/
-│   ├── train/               # Training images (54 class folders)
-│   ├── val/                 # Validation images
-│   └── test/                # Test images
+│       └── lib/
+│           ├── main.dart
+│           ├── screens/
+│           │   ├── home_screen.dart
+│           │   └── result_screen.dart
+│           └── services/
+│               └── api_service.dart
+├── forum_uploads/           # Uploaded forum images (runtime, git-ignored)
 ├── tests/
 │   └── test_api.py          # API smoke tests (pytest)
 ├── best_model.keras         # Trained MobileNetV2 model
-├── final_model.keras        # Alternative model checkpoint
 ├── class_names.json         # 54 class labels
-├── krishi_history.db        # SQLite database (runtime)
-├── trainallcrops_fixed.py   # Model training script
-├── test_model.py            # Model evaluation script
-├── Dockerfile               # Container build
-├── docker-compose.yml       # Single-service compose
-└── .env                     # API keys (Anthropic, data.gov.in)
+├── krishi_history.db        # SQLite database (runtime, git-ignored)
+├── Dockerfile
+├── docker-compose.yml
+└── .env                     # API keys (git-ignored)
 ```
 
 ---
@@ -94,15 +103,13 @@ Krishi_Rakshak/
 | Chilli | Whitefly, Yellowing, Anthracnose, Damping Off, Leaf Curl Virus, Leaf Spot, Veinal Mottle Virus, Healthy |
 | Corn / Maize | Gray Leaf Spot, Common Rust, Northern Leaf Blight, Healthy |
 | Mango | Anthracnose, Bacterial Canker, Cutting Weevil, Die Back, Gall Midge, Powdery Mildew, Sooty Mould, Healthy |
-| Paddy / Rice | Dead Heart, Bacterial Leaf Blight, Bacterial Leaf Streak, Bacterial Panicle Blight, Blast, Brown Spot, Downy Mildew, Hispa, Tungro, Normal/Healthy |
+| Paddy / Rice | Dead Heart, Bacterial Leaf Blight, Bacterial Leaf Streak, Bacterial Panicle Blight, Blast, Brown Spot, Downy Mildew, Hispa, Tungro, Healthy |
 | Potato | Early Blight, Late Blight, Healthy |
 | Sugarcane | Red Rot, Woolly Aphid, Healthy |
 | Tomato | Bacterial Spot, Early Blight, Late Blight, Leaf Mold, Septoria Leaf Spot, Spider Mites, Target Spot, TYLCV, Mosaic Virus, Healthy |
 | Wheat | Brown Rust, Yellow Rust, Healthy |
 
 ### Severity Grading
-
-Each prediction is graded on two axes:
 
 - **Remedy severity** (from `remedies.py`): `none` · `medium` · `high` · `critical`
 - **Confidence severity** (from model confidence): `healthy` · `early` (< 0.50) · `moderate` (0.50–0.75) · `severe` (> 0.75)
@@ -111,9 +118,9 @@ Each prediction is graded on two axes:
 
 ## Backend — FastAPI
 
-**File:** `backend/main.py`  
-**Runtime:** Python 3.11, Uvicorn, TensorFlow ≥ 2.15  
-**Database:** SQLite (`krishi_history.db`)  
+**File:** `backend/main.py`
+**Runtime:** Python 3.11, Uvicorn, TensorFlow ≥ 2.15
+**Database:** SQLite (`krishi_history.db`)
 **Port:** 8000
 
 ### API Endpoints
@@ -130,10 +137,6 @@ Each prediction is graded on two axes:
 |---|---|---|
 | POST | `/predict` | Single image → disease diagnosis + treatment |
 | POST | `/batch-predict` | Up to 10 images → per-image results + field summary |
-
-`/predict` accepts: `file` (image), optional `session_id`, `plant_label`, `save_history`, `lat`, `lng`
-
-`/batch-predict` returns a `field_summary` with urgency level (`low` / `medium` / `high`) and recommended action.
 
 #### History
 | Method | Path | Description |
@@ -152,30 +155,18 @@ Each prediction is graded on two axes:
 |---|---|---|
 | GET | `/mandi-prices` | Live mandi prices via data.gov.in API (1-hour cache) |
 
-Includes 7-day price trend tracking in SQLite. Falls back to demo data if `DATAGOV_KEY` is not set.
-
 #### Weather
 | Method | Path | Description |
 |---|---|---|
 | GET | `/weather` | Current conditions + 7-day forecast + farmer alerts |
-
-Uses Open-Meteo (free, no key required). Returns crop-specific spray suitability, frost/heatwave/fungal risk alerts.
-
-#### Weather Alerts
-| Method | Path | Description |
-|---|---|---|
 | GET | `/alerts/{session_id}` | Unread weather alerts for a farmer |
 | POST | `/alerts/{alert_id}/read` | Mark alert as read |
 | POST | `/alerts/check-now/{session_id}` | Manually trigger weather check |
-
-Background scheduler (APScheduler) runs weather checks every 6 hours for all active sessions.
 
 #### Irrigation
 | Method | Path | Description |
 |---|---|---|
 | POST | `/irrigation-schedule` | ET₀-based irrigation schedule (Hargreaves method) |
-
-Accepts crop type, growth stage, soil type, location, method (drip/sprinkler/flood).
 
 #### Soil
 | Method | Path | Description |
@@ -186,7 +177,7 @@ Accepts crop type, growth stage, soil type, location, method (drip/sprinkler/flo
 | Method | Path | Description |
 |---|---|---|
 | POST | `/chat` | Krishi Mitra AI chatbot (Claude claude-3-5-haiku) |
-| GET | `/daily-tip` | AI-generated daily farming tip for given crops |
+| GET | `/daily-tip` | AI-generated daily farming tip |
 | POST | `/text-to-speech` | Convert text to MP3 via gTTS |
 
 #### Forum
@@ -238,24 +229,24 @@ pytesseract>=0.3.10    # Soil card OCR
 
 ## Frontend
 
-**Tech:** Vanilla HTML/CSS/JS — no framework, no build step  
-**Fonts:** Syne (headings) · DM Sans (body) · JetBrains Mono (code/data)  
-**3D:** Three.js (landing page background)  
+**Tech:** Vanilla HTML/CSS/JS — no framework, no build step
+**Fonts:** Syne (headings) · DM Sans (body) · JetBrains Mono (code/data)
+**3D:** Three.js (landing page background via `bg.js`)
 **Charts:** Chart.js (mandi price trends)
 
 ### Page Architecture
 
 | Page | Auth Required | Description |
 |---|---|---|
-| `index.html` | No | Public landing — hero, features info, crops showcase, trust/stats |
+| `index.html` | No | Public landing — hero, features, crops showcase |
 | `login.html` | No | Farmer login / register |
-| `home.html` | Yes | Personal dashboard — greeting, weather stat, mandi price, tools grid, forum preview, daily tip |
+| `home.html` | Yes | SPA dashboard — Scan, Weather, Market, AI Chat, Irrigation, Soil, Calendar, History |
 | `detect.html` | Yes | Single image + batch (up to 10) disease detection |
 | `weather.html` | Yes | Hyper-local weather with Nominatim geocoding |
 | `market.html` | Yes | Mandi prices, 7-day chart, transport cost estimator |
 | `soil.html` | Yes | Fertiliser dose calculator |
 | `irrigation.html` | Yes | ET₀-based irrigation schedule |
-| `insurance.html` | Yes | PMFBY 5-step wizard (eligibility → premium → enrolment → claim → status) |
+| `insurance.html` | Yes | PMFBY 5-step wizard |
 | `loans.html` | Yes | KCC loan guide |
 | `finance.html` | Yes | Farm finance overview |
 | `tracker.html` | Yes | Disease history per plant with trend |
@@ -265,47 +256,48 @@ pytesseract>=0.3.10    # Soil card OCR
 | `chat.html` | Yes | Full-page Krishi Mitra AI chat |
 | `dashboard.html` | Yes | Sidebar dashboard layout |
 
+### home.html — SPA Dashboard
+
+`home.html` is a single-page app powered by `home-app.js`. It contains all core tools in one file with a sidebar nav and no page reloads:
+
+- 🔬 Scan Crop — drop zone, camera, AI diagnosis, result card with tabs
+- 🌦️ Weather — location search + GPS, 7-day forecast
+- 💰 Mandi Prices — crop + state selector, live prices
+- 🤖 Krishi Mitra AI — inline multilingual chat
+- 💧 Irrigation Planner — ET₀ calculator
+- 🌱 Soil Calculator — quick fertiliser guide
+- 📅 Crop Calendar
+- 📊 Scan History
+
 ### Shared Infrastructure (`nav.js` + `nav.css`)
 
-`nav.js` is included on every authenticated page and injects:
-
-- **Top navigation bar** — 13 links (Home → Forum), scrollable strip
-- **Bottom navigation** — 5 items for mobile (Home, Detect, Weather, Market, Forum)
-- **Custom cursor** — 9px green dot + 38px ring, smooth lerp tracking, expands on hover
-- **Noise overlay** — subtle grain texture
-- **Chatbot bubble** — sidebar tab (right edge, vertically centered), only loaded when `kr_session` token exists in localStorage
-- **Service worker** registration
-
-### Chatbot Bubble (`chat-bubble.js`)
-
-- Sidebar tab on the right edge (40×80px pill, "AI Chat" label)
-- Expands to a 340×500px panel on click
-- Multi-language: Hindi, English, Telugu, Tamil, Marathi, Bengali
-- Chat history persisted in `localStorage` (last 20 messages)
-- Quick-action chips for common queries
-- Only loads when farmer is logged in (checked via `kr_session` in localStorage)
-- Mobile: slides up from bottom as full-width sheet
+Injected on every authenticated page:
+- Top navigation bar (13 links)
+- Bottom navigation for mobile (5 items)
+- Custom cursor — green dot + ring with smooth lerp tracking
+- Noise overlay — subtle grain texture
+- Chatbot bubble — right-edge sidebar tab, only loads when `kr_session` exists
 
 ### CSS Architecture
 
-| File | Used by | Purpose |
-|---|---|---|
-| `style.css` | `index.html`, `detect.html` | Landing page + detect page full design system |
-| `nav.css` | All authenticated pages | Shared nav, cursor, cards, forms, buttons |
-| `dashboard.css` | Dashboard, login, tracker, weather, market, soil, irrigation | Auth layout, sidebar, scan results |
+| File | Purpose |
+|---|---|
+| `style.css` | Landing page + detect page design system |
+| `nav.css` | Shared nav, cursor, cards, forms, buttons |
+| `dashboard.css` | Auth layout, sidebar, scan results |
 
 ### PWA
 
 - `manifest.json` — installable, theme color `#22c55e`
 - `sw.js` — service worker for offline support
-- Install prompt shown automatically via `beforeinstallprompt`
+- `frontend/static/tfjs_model/` — TensorFlow.js model for fully client-side inference (no backend needed)
 
 ### Local Storage Keys
 
 | Key | Contents |
 |---|---|
 | `kr_session` | `{ token, phone, name, crop }` — farmer session |
-| `kr_farmer_profile` | Setup wizard data (crops, state, lat/lng, language) |
+| `kr_farmer_profile` | Onboarding data (crops, state, lat/lng, language) |
 | `kr_chat_history` | Last 20 chat messages |
 | `kr_chat_lang` | Selected chat language |
 | `kr_last_diagnosis` | Most recent scan result |
@@ -318,13 +310,14 @@ pytesseract>=0.3.10    # Soil card OCR
 
 **Location:** `mobile/krishi_rakshak_app/`
 
-Key dependencies:
-- `http` — API calls
-- `image_picker` — camera / gallery
-- `permission_handler` — camera/location permissions
-- `cached_network_image` — image caching
-- `lottie` — animations
-- `google_fonts` — typography
+| File | Purpose |
+|---|---|
+| `lib/main.dart` | App entry point |
+| `lib/screens/home_screen.dart` | Home screen with camera/upload |
+| `lib/screens/result_screen.dart` | Diagnosis result display |
+| `lib/services/api_service.dart` | FastAPI backend calls |
+
+Key packages: `http`, `image_picker`, `permission_handler`, `cached_network_image`, `lottie`, `google_fonts`
 
 ---
 
@@ -349,17 +342,14 @@ uvicorn main:app --reload --port 8000
 
 # Frontend — serve from repo root
 python -m http.server 3000
-# or: npx serve .
 ```
 
 ### Docker
 
 ```bash
 docker-compose up --build
-# API available at http://localhost:8000
+# API at http://localhost:8000
 ```
-
-The `docker-compose.yml` mounts `krishi_history.db` as a volume so data persists across container restarts.
 
 ### API Base URL
 
@@ -373,15 +363,14 @@ Configured via `<meta name="krishi-api-base" content="http://127.0.0.1:8000"/>` 
 pytest tests/test_api.py -v
 ```
 
-Current smoke tests cover: `/health`, `/` (root), `/classes`.
-
 ---
 
 ## Key Design Decisions
 
-- **No auth server** — session is a simple token stored in localStorage; the backend trusts `session_id` as passed. Suitable for MVP / demo.
-- **Privacy on outbreak map** — coordinates rounded to 2 decimal places (~1km precision) before storage and return. No individual farm locations exposed.
-- **Confidence threshold** — predictions below 40% confidence return an "Unrecognised" response rather than a low-confidence guess.
-- **Demo mandi prices** — if `DATAGOV_KEY` is not set, the backend returns realistic synthetic demo data so the UI always works.
-- **No build step** — the entire frontend is plain HTML/CSS/JS, served as static files. Zero toolchain required.
-- **Multilingual AI** — the `/chat` endpoint passes the selected language to Claude, which responds in Hindi, Telugu, Tamil, Marathi, Bengali, or English.
+- **No auth server** — session is a simple token in localStorage. Suitable for MVP/demo.
+- **Privacy on outbreak map** — coordinates rounded to ~1km before storage. No individual farm locations exposed.
+- **Confidence threshold** — predictions below 40% return "Unrecognised" rather than a low-confidence guess.
+- **Demo mandi prices** — if `DATAGOV_KEY` is not set, the backend returns realistic synthetic data so the UI always works.
+- **No build step** — entire frontend is plain HTML/CSS/JS, served as static files.
+- **Multilingual AI** — `/chat` passes the selected language to Claude, which responds in Hindi, Telugu, Tamil, Marathi, Bengali, or English.
+- **Dataset excluded from git** — the `Dataset/` folder (crop training images) is in `.gitignore` due to size.
