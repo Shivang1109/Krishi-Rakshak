@@ -1,0 +1,36 @@
+{
+  "name": "Krishi Rakshak",
+  "short_name": "KrishiAI",
+  "description": "AI-powered crop disease detection for Indian farmers. Instant diagnosis for 54 diseases across 9 crops.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#050c07",
+  "theme_color": "#22c55e",
+  "orientation": "portrait-primary",
+  "lang": "en-IN",
+  "categories": ["agriculture", "utilities", "productivity"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Ccircle cx='96' cy='96' r='96' fill='%23112a17'/%3E%3Cpath d='M96 20C75 40 69 62 75 84a42 42 0 0084 0c12-42 0-84-42-100z' fill='%2322c55e'/%3E%3Cpath d='M75 75c-30 12-54 30-48 60 18-6 36-18 42-36' fill='%234ade80' opacity='.7'/%3E%3Cpath d='M117 75c30 12 54 30 48 60-18-6-36-18-42-36' fill='%234ade80' opacity='.7'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Ccircle cx='256' cy='256' r='256' fill='%23112a17'/%3E%3Cpath d='M256 52C214 92 202 140 210 188a112 112 0 00224 0c32-112 0-224-112-260z' fill='%2322c55e'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "New Scan",
+      "short_name": "Scan",
+      "description": "Start a new crop disease scan",
+      "url": "./detect.html",
+      "icons": [{ "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Ccircle cx='48' cy='48' r='48' fill='%23112a17'/%3E%3Ccircle cx='44' cy='44' r='24' fill='none' stroke='%2322c55e' stroke-width='5'/%3E%3Cpath d='M62 62l14 14' stroke='%2322c55e' stroke-width='5'/%3E%3C/svg%3E", "sizes": "96x96" }]
+    }
+  ]
+}

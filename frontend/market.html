@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Mandi Prices — Krishi Rakshak</title>
+  <meta name="description" content="Live mandi prices for Indian farmers. Compare markets, track trends, estimate transport costs."/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="dashboard.css"/>
+  <style>
+    :root {
+      --gold:#f59e0b; --gold-d:rgba(245,158,11,.12);
+      --red:#ef4444;  --red-d:rgba(239,68,68,.1);
+      --rise:#22c55e; --fall:#ef4444; --stable:#f59e0b;
+    }
+    .mk-wrap { max-width:1100px; margin:0 auto; padding:24px 20px 60px; }
+
+    /* ── Topbar ── */
+    .mk-topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:14px; }
+    .mk-brand  { display:flex; align-items:center; gap:10px; font-family:var(--fh); font-weight:800; font-size:1.1rem; color:var(--t1); text-decoration:none; }
+    .mk-nav    { display:flex; gap:8px; flex-wrap:wrap; }
+    .mk-nav a  { font-family:var(--fm); font-size:.72rem; color:var(--tm); text-decoration:none; padding:5px 12px; border:1px solid var(--border); border-radius:20px; transition:all .2s; }
+    .mk-nav a:hover { border-color:var(--border-h); color:var(--green-b); }
+    .mk-nav a.active { border-color:var(--green); color:var(--green-b); background:rgba(34,197,94,.07); }
+
+    /* ── Search bar ── */
+    .mk-search { background:var(--bg-card); border:1px solid var(--border); border-radius:18px; padding:22px 24px; margin-bottom:24px; }
+    .mk-search-title { font-family:var(--fh); font-size:1.5rem; font-weight:800; color:var(--t1); margin-bottom:4px; }
+    .mk-search-sub   { font-size:.82rem; color:var(--tm); margin-bottom:18px; }
+    .mk-form { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:12px; align-items:end; }
+    .mk-fg label { font-family:var(--fm); font-size:.62rem; color:var(--tm); text-transform:uppercase; letter-spacing:.1em; display:block; margin-bottom:6px; }
+    .mk-inp, .mk-sel {
+      width:100%; padding:10px 14px;
+      background:rgba(255,255,255,.04); border:1px solid var(--border);
+      border-radius:10px; font-family:var(--fm); font-size:.84rem; color:var(--t1);
+      outline:none; transition:border .2s;
+    }
+    .mk-inp:focus, .mk-sel:focus { border-color:var(--green); }
+    .mk-sel option { background:#112a17; }
+    .btn-mk-search {
+      padding:10px 24px; background:var(--green); border:none; border-radius:10px;
+      font-family:var(--fh); font-size:.86rem; font-weight:700; color:#0a1a0e;
+      cursor:pointer; white-space:nowrap; transition:all .2s; height:42px;
+    }
+    .btn-mk-search:hover { background:var(--green-b); transform:translateY(-1px); }
+    .btn-mk-search:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+
+    /* ── Demo banner ── */
+    .demo-note {
+      display:none; padding:10px 16px; background:rgba(245,158,11,.1);
+      border:1px solid rgba(245,158,11,.25); border-radius:10px;
+      font-family:var(--fm); font-size:.72rem; color:#fbbf24; margin-bottom:18px;
+    }
+    .demo-note.show { display:block; }
+
+    /* ── Best market hero card ── */
+    .best-card {
+      background:linear-gradient(135deg,rgba(34,197,94,.12),rgba(20,184,166,.08));
+      border:1px solid rgba(34,197,94,.3); border-radius:18px;
+      padding:22px 26px; margin-bottom:20px;
+      display:flex; align-items:center; gap:24px; flex-wrap:wrap;
+    }
+    .best-badge { padding:4px 12px; background:var(--green); border-radius:99px; font-family:var(--fm); font-size:.62rem; font-weight:700; color:#0a1a0e; }
+    .best-name  { font-family:var(--fh); font-size:1.1rem; font-weight:800; color:var(--t1); margin-top:6px; }
+    .best-price { font-family:var(--fm); font-size:2.4rem; font-weight:500; color:var(--lime); line-height:1; }
+    .best-unit  { font-family:var(--fm); font-size:.68rem; color:var(--tm); }
+    .best-gain  { font-family:var(--fm); font-size:.78rem; color:var(--green-b); margin-top:4px; }
+
+    /* ── Grid: chart + transport ── */
+    .mk-grid2 { display:grid; grid-template-columns:1.4fr 1fr; gap:18px; margin-bottom:20px; }
+
+    /* ── Chart card ── */
+    .mk-card { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:20px; }
+    .mk-card-title { font-family:var(--fh); font-size:.9rem; font-weight:700; color:var(--t1); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+    .chart-wrap { position:relative; height:160px; }
+
+    /* ── Transport estimator ── */
+    .tr-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+    .tr-fg label { font-family:var(--fm); font-size:.6rem; color:var(--tm); text-transform:uppercase; letter-spacing:.08em; display:block; margin-bottom:5px; }
+    .tr-result { background:rgba(34,197,94,.06); border:1px solid rgba(34,197,94,.18); border-radius:10px; padding:12px 14px; margin-top:10px; }
+    .tr-result-line { font-family:var(--fm); font-size:.78rem; color:var(--t1); margin-bottom:4px; }
+    .tr-result-line span { color:var(--lime); font-weight:600; }
+    .tr-net { font-family:var(--fh); font-size:1.1rem; font-weight:700; color:var(--green-b); margin-top:8px; }
+
+    /* ── Market table ── */
+    .mk-table-wrap { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+    .mk-table { width:100%; border-collapse:collapse; }
+    .mk-table thead th { padding:11px 14px; font-family:var(--fm); font-size:.62rem; color:var(--tm); text-transform:uppercase; letter-spacing:.08em; text-align:left; border-bottom:1px solid var(--border); background:rgba(0,0,0,.15); }
+    .mk-table tbody tr { border-bottom:1px solid rgba(34,197,94,.05); transition:background .15s; }
+    .mk-table tbody tr:hover { background:rgba(34,197,94,.04); }
+    .mk-table tbody td { padding:12px 14px; font-size:.84rem; color:var(--t1); }
+    .mk-table tbody td.price { font-family:var(--fm); color:var(--lime); font-size:.9rem; font-weight:500; }
+    .mk-table tbody td.range { font-family:var(--fm); font-size:.72rem; color:var(--tm); }
+    .trend-pill { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:99px; font-family:var(--fm); font-size:.62rem; font-weight:600; }
+    .trend-pill.rising  { background:rgba(34,197,94,.12);  color:#4ade80; }
+    .trend-pill.falling { background:rgba(239,68,68,.12);  color:#f87171; }
+    .trend-pill.stable  { background:rgba(245,158,11,.12); color:#fbbf24; }
+    .best-row td { background:rgba(34,197,94,.04) !important; }
+
+    /* ── Empty / loading ── */
+    .mk-empty { padding:48px; text-align:center; font-size:.84rem; color:var(--tm); }
+    .mk-spinner { width:32px; height:32px; border:3px solid var(--border); border-top-color:var(--green); border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 12px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    @media(max-width:768px) {
+      .mk-form { grid-template-columns:1fr 1fr; }
+      .mk-grid2 { grid-template-columns:1fr; }
+      .tr-row   { grid-template-columns:1fr; }
+    }
+    @media(max-width:480px) {
+      .mk-form { grid-template-columns:1fr; }
+    }
+  </style>
+  <link rel="stylesheet" href="nav.css"/>
+</head>
+<body data-page="market">
+<div class="mk-wrap">
+
+  <!-- Topbar -->
+  <!-- Search -->
+  <div class="mk-search">
+    <div class="mk-search-title">💰 Live Mandi Prices</div>
+    <div class="mk-search-sub">Compare markets, track 7-day trends, estimate transport costs</div>
+    <div class="mk-form">
+      <div class="mk-fg">
+        <label>Crop / Commodity</label>
+        <select class="mk-sel" id="inp-crop">
+          <option value="Tomato">🍅 Tomato</option>
+          <option value="Wheat" selected>🌾 Wheat</option>
+          <option value="Paddy">🌾 Paddy (Rice)</option>
+          <option value="Onion">🧅 Onion</option>
+          <option value="Potato">🥔 Potato</option>
+          <option value="Maize">🌽 Maize</option>
+          <option value="Chilli">🌶️ Chilli</option>
+          <option value="Mango">🥭 Mango</option>
+          <option value="Sugarcane">🎋 Sugarcane</option>
+          <option value="Banana">🍌 Banana</option>
+          <option value="Soyabean">Soyabean</option>
+          <option value="Cotton">Cotton</option>
+          <option value="Groundnut">Groundnut</option>
+        </select>
+      </div>
+      <div class="mk-fg">
+        <label>State</label>
+        <select class="mk-sel" id="inp-state">
+          <option value="Maharashtra">Maharashtra</option>
+          <option value="Punjab" selected>Punjab</option>
+          <option value="Uttar Pradesh">Uttar Pradesh</option>
+          <option value="Madhya Pradesh">Madhya Pradesh</option>
+          <option value="Karnataka">Karnataka</option>
+          <option value="Andhra Pradesh">Andhra Pradesh</option>
+          <option value="Tamil Nadu">Tamil Nadu</option>
+          <option value="Gujarat">Gujarat</option>
+          <option value="Rajasthan">Rajasthan</option>
+          <option value="West Bengal">West Bengal</option>
+          <option value="Bihar">Bihar</option>
+          <option value="Haryana">Haryana</option>
+          <option value="Telangana">Telangana</option>
+          <option value="Odisha">Odisha</option>
+        </select>
+      </div>
+      <div class="mk-fg">
+        <label>District (optional)</label>
+        <input class="mk-inp" id="inp-district" placeholder="e.g. Nashik"/>
+      </div>
+      <button class="btn-mk-search" id="btn-search" onclick="fetchPrices()">Search →</button>
+    </div>
+  </div>
+
+  <div class="demo-note" id="demo-note">
+    ⚠️ Showing demo data. Set your <strong>data.gov.in API key</strong> in the backend
+    (<code>DATAGOV_KEY</code> env var) for live prices.
+  </div>
+
+  <!-- Results area -->
+  <div id="results-area">
+    <div class="mk-empty">
+      <div style="font-size:2.5rem;margin-bottom:12px">💰</div>
+      <div>Select a crop and state above to see live mandi prices</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = (document.querySelector('meta[name="krishi-api-base"]') || {content:'http://127.0.0.1:8000'}).content || 'http://127.0.0.1:8000';
+let priceChart = null;
+let lastMarkets = [];
+
+// ── Haversine (client-side distance) ──────────────────────────────────────
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.asin(Math.sqrt(a));
+}
+
+// ── Fetch prices ───────────────────────────────────────────────────────────
+async function fetchPrices() {
+  const crop     = document.getElementById('inp-crop').value;
+  const state    = document.getElementById('inp-state').value;
+  const district = document.getElementById('inp-district').value.trim();
+  const btn      = document.getElementById('btn-search');
+
+  btn.disabled = true; btn.textContent = 'Loading…';
+  document.getElementById('results-area').innerHTML = `
+    <div style="padding:8px">
+      <div class="skeleton skeleton-card" style="height:90px;margin-bottom:16px"></div>
+      <div class="skeleton-row">
+        <div class="skeleton" style="height:180px;border-radius:16px;flex:1"></div>
+        <div class="skeleton" style="height:180px;border-radius:16px;flex:1"></div>
+      </div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+    </div>`;
+
+  try {
+    let url = `${API}/mandi-prices?crop=${encodeURIComponent(crop)}&state=${encodeURIComponent(state)}`;
+    if (district) url += `&district=${encodeURIComponent(district)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('API error ' + res.status);
+    const data = await res.json();
+    lastMarkets = data.markets || [];
+    renderResults(data);
+  } catch(e) {
+    document.getElementById('results-area').innerHTML =
+      `<div class="mk-empty">❌ ${e.message}<br><small>Make sure the backend is running at ${API}</small></div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Search →';
+  }
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function renderResults(data) {
+  const demoNote = document.getElementById('demo-note');
+  demoNote.classList.toggle('show', !!data._demo);
+
+  const best = data.best_market;
+  const markets = data.markets || [];
+  const chart = data.price_chart || [];
+
+  let html = '';
+
+  // Best market hero
+  if (best) {
+    html += `
+    <div class="best-card">
+      <div>
+        <span class="best-badge">⭐ Best Market</span>
+        <div class="best-name">${best.name}</div>
+        <div class="best-gain">${best.potential_gain_vs_local}</div>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div class="best-price">₹${best.price.toLocaleString('en-IN')}</div>
+        <div class="best-unit">per quintal (modal price)</div>
+      </div>
+    </div>`;
+  }
+
+  // Chart + Transport grid
+  html += `<div class="mk-grid2">
+    <div class="mk-card">
+      <div class="mk-card-title">📈 7-Day Price Trend — ${data.crop}</div>
+      <div class="chart-wrap"><canvas id="price-chart"></canvas></div>
+    </div>
+    <div class="mk-card">
+      <div class="mk-card-title">🚛 Transport Cost Estimator</div>
+      <div class="tr-row">
+        <div class="tr-fg">
+          <label>Distance to Market (km)</label>
+          <input class="mk-inp" id="tr-dist" type="number" value="30" min="1" max="500" oninput="calcTransport()"/>
+        </div>
+        <div class="tr-fg">
+          <label>Vehicle Type</label>
+          <select class="mk-sel" id="tr-vehicle" onchange="calcTransport()">
+            <option value="truck">Truck (₹12/km/quintal)</option>
+            <option value="tractor">Tractor (₹8/km/quintal)</option>
+            <option value="cycle">Cycle cart (₹3/km/quintal)</option>
+          </select>
+        </div>
+      </div>
+      <div class="tr-fg" style="margin-bottom:10px">
+        <label>Your Local Price (₹/quintal)</label>
+        <input class="mk-inp" id="tr-local" type="number" value="${best ? best.price : 1500}" oninput="calcTransport()"/>
+      </div>
+      <div class="tr-result" id="tr-result">
+        <div class="tr-result-line">Transport cost: <span id="tr-cost">—</span></div>
+        <div class="tr-result-line">Loading charges: <span id="tr-load">—</span></div>
+        <div class="tr-net" id="tr-net">Net realisation: —</div>
+      </div>
+    </div>
+  </div>`;
+
+  // Market table
+  html += `
+  <div class="mk-table-wrap">
+    <table class="mk-table">
+      <thead>
+        <tr>
+          <th>#</th><th>Market</th><th>District</th>
+          <th>Modal Price</th><th>Min – Max</th><th>Trend</th><th>Date</th>
+        </tr>
+      </thead>
+      <tbody id="mk-tbody">`;
+
+  markets.forEach((m, i) => {
+    const trendIcon = m.trend === 'rising' ? '↑' : m.trend === 'falling' ? '↓' : '→';
+    html += `
+      <tr class="${i===0?'best-row':''}">
+        <td style="font-family:var(--fm);font-size:.72rem;color:var(--tm)">${i===0?'⭐':i+1}</td>
+        <td><strong>${m.name}</strong></td>
+        <td style="color:var(--tm);font-size:.8rem">${m.district||'—'}</td>
+        <td class="price">₹${m.modal.toLocaleString('en-IN')}</td>
+        <td class="range">₹${m.min.toLocaleString('en-IN')} – ₹${m.max.toLocaleString('en-IN')}</td>
+        <td><span class="trend-pill ${m.trend}">${trendIcon} ${m.trend}</span></td>
+        <td style="font-family:var(--fm);font-size:.72rem;color:var(--tm)">${m.date}</td>
+      </tr>`;
+  });
+
+  html += `</tbody></table>
+    ${markets.length === 0 ? '<div class="mk-empty">No markets found for this search.</div>' : ''}
+  </div>`;
+
+  document.getElementById('results-area').innerHTML = html;
+
+  // Draw chart
+  drawChart(chart, data.crop);
+  calcTransport();
+}
+
+// ── Chart.js sparkline ─────────────────────────────────────────────────────
+function drawChart(chartData, crop) {
+  if (priceChart) { priceChart.destroy(); priceChart = null; }
+  const canvas = document.getElementById('price-chart');
+  if (!canvas || !chartData.length) return;
+  priceChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: chartData.map(d => {
+        const dt = new Date(d.date);
+        return dt.toLocaleDateString('en-IN', {day:'numeric',month:'short'});
+      }),
+      datasets: [{
+        label: `${crop} Avg Price (₹/quintal)`,
+        data: chartData.map(d => d.avg_price),
+        borderColor: '#22c55e',
+        backgroundColor: 'rgba(34,197,94,.08)',
+        borderWidth: 2,
+        pointBackgroundColor: '#a8ff3e',
+        pointRadius: 4,
+        tension: 0.4,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: 'rgba(74,222,128,.06)' }, ticks: { color: 'rgba(134,239,172,.5)', font: { family: 'JetBrains Mono', size: 10 } } },
+        y: { grid: { color: 'rgba(74,222,128,.06)' }, ticks: { color: 'rgba(134,239,172,.5)', font: { family: 'JetBrains Mono', size: 10 }, callback: v => '₹'+v } }
+      }
+    }
+  });
+}
+
+// ── Transport calculator ───────────────────────────────────────────────────
+function calcTransport() {
+  const dist    = parseFloat(document.getElementById('tr-dist')?.value) || 30;
+  const vehicle = document.getElementById('tr-vehicle')?.value || 'truck';
+  const local   = parseFloat(document.getElementById('tr-local')?.value) || 1500;
+  const rates   = { truck: 12, tractor: 8, cycle: 3 };
+  const rate    = rates[vehicle] || 12;
+  const transport = dist * rate;
+  const loading   = 50; // fixed ₹50/quintal loading/unloading
+  const net       = local - transport - loading;
+
+  const costEl = document.getElementById('tr-cost');
+  const loadEl = document.getElementById('tr-load');
+  const netEl  = document.getElementById('tr-net');
+  if (!costEl) return;
+
+  costEl.textContent = `₹${transport.toFixed(0)}/quintal`;
+  loadEl.textContent = `₹${loading}/quintal`;
+  netEl.textContent  = `Net realisation: ₹${net.toFixed(0)}/quintal`;
+  netEl.style.color  = net > 0 ? '#4ade80' : '#f87171';
+}
+
+// ── Auto-load on page open ─────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  // Pre-fill from localStorage if mandi data was saved by finance.html
+  const saved = localStorage.getItem('kr_last_mandi');
+  if (saved) {
+    try {
+      const { crop, state } = JSON.parse(saved);
+      if (crop) document.getElementById('inp-crop').value = crop;
+      if (state) document.getElementById('inp-state').value = state;
+    } catch(_) {}
+  }
+});
+</script>
+<script src="config.js"></script>
+<script src="nav.js"></script>
+</body>
+</html>

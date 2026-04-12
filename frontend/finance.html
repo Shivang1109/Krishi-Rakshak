@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="krishi-api-base" content="http://127.0.0.1:8000"/>
+  <meta name="description" content="Track farm expenses, forecast profits, and export season reports — Krishi Rakshak Finance."/>
+  <title>Finance & Profit — Krishi Rakshak</title>
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#22c55e"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="nav.css"/>
+  <style>
+    /* ── Skeleton Loader ── */
+    .skeleton{background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.05) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px;}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    #fin-skeleton{padding:24px 16px 80px;max-width:1300px;margin:0 auto;display:grid;grid-template-columns:220px 1fr;gap:20px;}
+    @media(max-width:768px){#fin-skeleton{grid-template-columns:1fr;}}
+    .sk-sidebar{height:320px;border-radius:16px;}
+    .sk-main-top{height:60px;border-radius:13px;margin-bottom:18px;}
+    .sk-main-card{height:240px;border-radius:16px;margin-bottom:18px;}
+    .sk-main-card2{height:180px;border-radius:16px;}
+    /* ── Page fade-in ── */
+    #fin-app{opacity:0;transition:opacity .35s ease;}
+    #fin-app.visible{opacity:1;}
+  </style>
+</head>
+<body data-page="finance">
+<div class="noise" aria-hidden="true"></div>
+
+<!-- Skeleton shown while finance.js hydrates -->
+<div id="fin-skeleton" aria-hidden="true">
+  <div class="skeleton sk-sidebar"></div>
+  <div>
+    <div class="skeleton sk-main-top"></div>
+    <div class="skeleton sk-main-card"></div>
+    <div class="skeleton sk-main-card2"></div>
+  </div>
+</div>
+
+<div id="fin-app"></div>
+
+<script src="finance.js"></script>
+<script>
+  (function waitForRender() {
+    const app = document.getElementById('fin-app');
+    if (app && app.innerHTML.length > 100) {
+      document.getElementById('fin-skeleton').style.display = 'none';
+      app.classList.add('visible');
+    } else {
+      requestAnimationFrame(waitForRender);
+    }
+  })();
+</script>
+<script src="config.js"></script>
+<script src="nav.js"></script>
+</body>
+</html>

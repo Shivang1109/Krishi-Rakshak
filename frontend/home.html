@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="krishi-api-base" content="http://127.0.0.1:8000"/>
+<title>Dashboard — Krishi Rakshak</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#22c55e"/>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><path d='M20 4C13 10 11 17 13 24a7 7 0 0014 0c2-7 0-14-7-20z' fill='%2322c55e'/></svg>"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="nav.css"/>
+<style>
+/* ── SPA Shell ── */
+:root{--sb:220px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{background:radial-gradient(ellipse 90% 65% at 50% -5%,#2a6e3a 0%,#183421 40%,#112a17 70%);color:#f0fdf4;font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;cursor:default;position:relative;}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 60% 40% at 20% 20%,rgba(34,197,94,.07) 0%,transparent 60%),radial-gradient(ellipse 50% 35% at 80% 70%,rgba(168,255,62,.05) 0%,transparent 55%);animation:kr-orb-drift 18s ease-in-out infinite alternate;}
+body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 35% 25% at 10% 80%,rgba(34,197,94,.05) 0%,transparent 55%),radial-gradient(ellipse 45% 30% at 90% 20%,rgba(168,255,62,.04) 0%,transparent 50%);animation:kr-orb-drift2 22s ease-in-out infinite alternate;}
+@keyframes kr-orb-drift{0%{transform:translate(0,0) scale(1)}33%{transform:translate(2%,3%) scale(1.04)}66%{transform:translate(-2%,1%) scale(0.97)}100%{transform:translate(1%,-2%) scale(1.02)}}
+@keyframes kr-orb-drift2{0%{transform:translate(0,0) scale(1)}50%{transform:translate(-3%,2%) scale(1.05)}100%{transform:translate(2%,-1%) scale(0.98)}}
+a{color:inherit;text-decoration:none;}
+button{font-family:'DM Sans',sans-serif;cursor:pointer;}
+
+/* ── App shell ── */
+.app-shell{display:flex;flex:1;overflow:hidden;padding-top:0;}
+/* Sidebar */
+.sidebar{width:var(--sb);flex-shrink:0;background:rgba(5,12,7,.85);border-right:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;overflow-y:auto;scrollbar-width:none;}
+.sidebar::-webkit-scrollbar{display:none;}
+.sb-brand{padding:20px 16px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.06);}
+.sb-brand-name{font-family:'Syne',sans-serif;font-weight:800;font-size:.95rem;}
+.sb-nav{flex:1;padding:10px 8px;}
+.sb-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:all .18s;border:none;background:none;color:rgba(134,239,172,.5);width:100%;text-align:left;font-size:.84rem;margin-bottom:2px;}
+.sb-item:hover{background:rgba(255,255,255,.05);color:#f0fdf4;}
+.sb-item.active{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.2);}
+.sb-item .si-icon{font-size:1.1rem;flex-shrink:0;width:22px;text-align:center;}
+.sb-divider{height:1px;background:rgba(255,255,255,.06);margin:8px 4px;}
+.sb-footer{padding:12px 10px;border-top:1px solid rgba(255,255,255,.06);}
+.sb-user{display:flex;align-items:center;gap:9px;padding:10px 8px;border-radius:10px;background:rgba(255,255,255,.04);}
+.sb-av{width:32px;height:32px;border-radius:50%;background:rgba(34,197,94,.2);border:1px solid rgba(34,197,94,.3);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:.75rem;font-weight:700;flex-shrink:0;}
+.sb-user-name{font-size:.82rem;font-weight:600;color:#f0fdf4;}
+.sb-user-crop{font-size:.68rem;color:rgba(134,239,172,.45);}
+.sb-logout{margin-left:auto;background:none;border:none;color:rgba(134,239,172,.3);font-size:.9rem;cursor:pointer;padding:4px;transition:color .2s;}
+.sb-logout:hover{color:#f87171;}
+
+/* ── Main content ── */
+.main-content{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(34,197,94,.2) transparent;}
+.main-content::-webkit-scrollbar{width:4px;}
+.main-content::-webkit-scrollbar-thumb{background:rgba(34,197,94,.2);border-radius:4px;}
+
+/* ── Section panels ── */
+.spa-section{display:none;padding:24px 28px 80px;max-width:1000px;}
+.spa-section.active{display:block;}
+.sec-title{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;margin-bottom:4px;}
+.sec-sub{color:rgba(134,239,172,.5);font-size:.84rem;margin-bottom:24px;}
+
+/* ── Scan section (hero) ── */
+.scan-hero{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;}
+@media(max-width:700px){.scan-hero{grid-template-columns:1fr;}}
+.drop-zone-spa{border:2px dashed rgba(34,197,94,.25);border-radius:20px;padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:rgba(34,197,94,.02);}
+.drop-zone-spa:hover,.drop-zone-spa.drag{border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.05);}
+.drop-zone-spa input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.dz-icon{font-size:3rem;margin-bottom:12px;}
+.dz-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:6px;}
+.dz-hint{font-size:.75rem;color:rgba(134,239,172,.4);}
+.dz-preview-img{width:100%;height:200px;object-fit:cover;border-radius:14px;display:none;}
+.scan-panel-right{display:flex;flex-direction:column;gap:12px;}
+.btn-scan-primary{padding:14px;background:linear-gradient(135deg,#16a34a,#15803d);border:none;border-radius:14px;color:#fff;font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:opacity .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-scan-primary:hover{opacity:.88;}
+.btn-scan-primary:disabled{opacity:.35;cursor:not-allowed;}
+.btn-cam{padding:12px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:12px;color:#4ade80;font-size:.88rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-cam:hover{background:rgba(34,197,94,.14);}
+.scan-tips{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px;}
+.scan-tips-title{font-size:.72rem;color:rgba(134,239,172,.5);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;}
+.scan-tip-item{display:flex;align-items:center;gap:8px;font-size:.8rem;color:rgba(240,253,242,.6);margin-bottom:7px;}
+.scan-tip-dot{width:5px;height:5px;border-radius:50%;background:#22c55e;flex-shrink:0;box-shadow:0 0 5px #22c55e;}
+
+/* ── Progress bar ── */
+.scan-progress{display:none;margin-top:12px;}
+.sp-track{height:4px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;}
+.sp-fill{height:100%;width:0%;background:linear-gradient(90deg,#22c55e,#a8ff3e);transition:width .4s ease;border-radius:4px;}
+.sp-steps{display:flex;gap:16px;margin-top:8px;}
+.sp-step{font-size:.7rem;color:rgba(134,239,172,.35);display:flex;align-items:center;gap:5px;}
+.sp-step.active{color:#4ade80;}
+.sp-step.done{color:rgba(134,239,172,.6);}
+.sp-step em{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;}
+
+/* ── Result card ── */
+.result-card{margin-top:24px;display:none;animation:rc-in .35s cubic-bezier(.34,1.56,.64,1);}
+.result-card.show{display:block;}
+@keyframes rc-in{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* Hero banner */
+.rc-banner{border-radius:20px;padding:24px;margin-bottom:16px;display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;position:relative;overflow:hidden;}
+.rc-banner::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,currentColor,transparent 70%);opacity:.08;pointer-events:none;}
+.rc-banner.sev-healthy{background:rgba(34,197,94,.1);border:1.5px solid rgba(34,197,94,.3);}
+.rc-banner.sev-early{background:rgba(134,239,172,.08);border:1.5px solid rgba(134,239,172,.25);}
+.rc-banner.sev-moderate{background:rgba(245,158,11,.1);border:1.5px solid rgba(245,158,11,.3);}
+.rc-banner.sev-severe{background:rgba(239,68,68,.1);border:1.5px solid rgba(239,68,68,.3);}
+
+/* Leaf image with overlay */
+.rc-img-wrap{position:relative;flex-shrink:0;}
+.rc-img{width:130px;height:130px;object-fit:cover;border-radius:14px;display:block;}
+.rc-img-badge{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);padding:3px 10px;border-radius:99px;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;border:2px solid rgba(7,15,9,.8);}
+
+/* Info block */
+.rc-info{flex:1;min-width:0;}
+.rc-crop-tag{font-size:.68rem;color:rgba(134,239,172,.5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;font-family:'JetBrains Mono',monospace;}
+.rc-name{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;line-height:1.2;margin-bottom:8px;}
+.rc-desc{font-size:.83rem;color:rgba(240,253,242,.65);line-height:1.65;margin-bottom:14px;}
+
+/* Confidence meter */
+.rc-conf-wrap{margin-bottom:16px;}
+.rc-conf-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.rc-conf-text{font-size:.7rem;color:rgba(134,239,172,.5);text-transform:uppercase;letter-spacing:.06em;}
+.rc-conf-pct{font-family:'JetBrains Mono',monospace;font-size:.9rem;font-weight:700;}
+.rc-conf-track{height:8px;background:rgba(255,255,255,.08);border-radius:8px;overflow:hidden;}
+.rc-conf-fill{height:100%;border-radius:8px;transition:width 1s cubic-bezier(.34,1.56,.64,1);}
+
+/* Action buttons */
+.rc-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.rc-btn{padding:9px 16px;border-radius:10px;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s;border:none;display:flex;align-items:center;gap:6px;}
+.rc-btn-wa{background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.3);color:#25d366;}
+.rc-btn-wa:hover{background:rgba(37,211,102,.22);}
+.rc-btn-pdf{background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);color:#a5b4fc;}
+.rc-btn-pdf:hover{background:rgba(99,102,241,.22);}
+.rc-btn-new{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(240,253,242,.6);}
+.rc-btn-new:hover{background:rgba(255,255,255,.1);color:#f0fdf4;}
+
+/* Tabs */
+.rc-tabs{display:flex;gap:4px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:4px;margin-bottom:14px;}
+.rc-tab{flex:1;padding:8px 10px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;background:none;color:rgba(134,239,172,.4);border-radius:9px;transition:all .2s;text-align:center;}
+.rc-tab.active{background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(34,197,94,.25);}
+.rc-tab-content{display:flex;flex-direction:column;gap:8px;}
+.rc-list-item{display:flex;gap:10px;padding:11px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;font-size:.83rem;line-height:1.55;color:rgba(240,253,242,.85);}
+.rc-list-item .ri-icon{flex-shrink:0;margin-top:1px;}
+.rc-conf-bar{flex:1;height:6px;background:rgba(255,255,255,.08);border-radius:6px;overflow:hidden;}
+.rc-conf-fill{height:100%;background:linear-gradient(90deg,#22c55e,#a8ff3e);border-radius:6px;transition:width .8s ease;}
+.rc-conf-pct{font-family:'JetBrains Mono',monospace;font-size:.82rem;color:#a8ff3e;font-weight:600;}
+.rc-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.rc-btn{padding:8px 14px;border-radius:9px;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s;border:none;}
+.rc-btn-wa{background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.3);color:#25d366;}
+.rc-btn-pdf{background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);color:#a5b4fc;}
+.rc-btn-new{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(240,253,242,.7);}
+.rc-tabs{display:flex;gap:6px;margin-top:18px;border-bottom:1px solid rgba(255,255,255,.07);padding-bottom:0;}
+.rc-tab{padding:8px 16px;font-size:.8rem;font-weight:600;cursor:pointer;border:none;background:none;color:rgba(134,239,172,.4);border-bottom:2px solid transparent;transition:all .2s;margin-bottom:-1px;}
+.rc-tab.active{color:#4ade80;border-bottom-color:#22c55e;}
+.rc-tab-content{padding:16px 0;}
+.rc-list-item{display:flex;gap:10px;padding:9px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:9px;margin-bottom:7px;font-size:.83rem;line-height:1.5;}
+
+/* ── Stats row ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+@media(max-width:600px){.stats-grid{grid-template-columns:repeat(2,1fr);}}
+.stat-tile{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;cursor:pointer;transition:border-color .2s;}
+.stat-tile:hover{border-color:rgba(74,222,128,.22);}
+.st-icon{font-size:1.4rem;margin-bottom:6px;}
+.st-val{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:#a8ff3e;line-height:1;}
+.st-label{font-size:.68rem;color:rgba(134,239,172,.45);margin-top:3px;text-transform:uppercase;letter-spacing:.05em;}
+
+/* ── Weather section ── */
+.weather-embed{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:20px;margin-bottom:16px;}
+.we-current{display:flex;align-items:center;gap:20px;margin-bottom:18px;flex-wrap:wrap;}
+.we-temp{font-family:'Syne',sans-serif;font-size:3.5rem;font-weight:800;line-height:1;}
+.we-desc{color:rgba(240,253,242,.6);font-size:.9rem;margin-top:4px;}
+.we-stats{display:flex;gap:20px;flex-wrap:wrap;}
+.we-stat{display:flex;flex-direction:column;gap:2px;}
+.we-stat-label{font-size:.65rem;color:rgba(134,239,172,.4);text-transform:uppercase;letter-spacing:.05em;}
+.we-stat-val{font-size:.95rem;font-weight:600;}
+.forecast-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;}
+.forecast-row::-webkit-scrollbar{display:none;}
+.fc-card{min-width:90px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px 10px;text-align:center;flex-shrink:0;}
+.fc-day{font-size:.68rem;color:rgba(134,239,172,.45);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;}
+.fc-icon{font-size:1.4rem;margin-bottom:6px;}
+.fc-temps{font-size:.82rem;font-weight:600;}
+.fc-rain{font-size:.68rem;color:#60a5fa;margin-top:3px;}
+.we-alerts{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+.we-alert{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px;font-size:.82rem;color:#fbbf24;}
+.we-alert.frost{background:rgba(147,197,253,.06);border-color:rgba(147,197,253,.2);color:#93c5fd;}
+.we-alert.spray{background:rgba(34,197,94,.06);border-color:rgba(34,197,94,.2);color:#4ade80;}
+.loc-bar{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+.loc-input{flex:1;min-width:180px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:9px 14px;color:#f0fdf4;font-family:'DM Sans',sans-serif;font-size:.85rem;outline:none;}
+.loc-input:focus{border-color:rgba(34,197,94,.4);}
+.loc-btn-sm{padding:9px 16px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);border-radius:10px;color:#4ade80;font-size:.82rem;cursor:pointer;white-space:nowrap;transition:all .2s;}
+.loc-btn-sm:hover{background:rgba(34,197,94,.2);}
+
+/* ── Market section ── */
+.market-form{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+.mk-sel-sm{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:9px 12px;color:#f0fdf4;font-family:'DM Sans',sans-serif;font-size:.84rem;outline:none;min-width:140px;}
+.mk-sel-sm option{background:#0f1f12;}
+.mk-sel-sm:focus{border-color:rgba(34,197,94,.4);}
+.best-market-card{background:linear-gradient(135deg,rgba(34,197,94,.12),rgba(20,184,166,.06));border:1px solid rgba(34,197,94,.25);border-radius:14px;padding:18px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.bmc-name{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;}
+.bmc-price{font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:500;color:#a8ff3e;line-height:1;}
+.bmc-unit{font-size:.7rem;color:rgba(134,239,172,.45);}
+.market-table{width:100%;border-collapse:collapse;}
+.market-table th{font-size:.62rem;color:rgba(134,239,172,.45);text-transform:uppercase;letter-spacing:.07em;padding:8px 12px;text-align:left;border-bottom:1px solid rgba(255,255,255,.07);}
+.market-table td{padding:10px 12px;font-size:.83rem;border-bottom:1px solid rgba(255,255,255,.04);}
+.market-table tr:last-child td{border-bottom:none;}
+.trend-up{color:#4ade80;}.trend-down{color:#f87171;}.trend-stable{color:#fbbf24;}
+
+/* ── Map section ── */
+#outbreak-map{height:420px;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.08);}
+
+/* ── Forum section ── */
+.forum-post-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:border-color .2s;}
+.forum-post-card:hover{border-color:rgba(74,222,128,.22);}
+.fp-title{font-size:.88rem;font-weight:500;margin-bottom:6px;line-height:1.4;}
+.fp-meta{display:flex;gap:8px;font-size:.68rem;color:rgba(134,239,172,.4);flex-wrap:wrap;}
+.fp-tag{padding:2px 8px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.15);border-radius:99px;color:#4ade80;}
+.forum-compose{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:18px;margin-bottom:18px;}
+.forum-compose textarea{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 14px;color:#f0fdf4;font-family:'DM Sans',sans-serif;font-size:.85rem;outline:none;resize:vertical;min-height:80px;margin-bottom:10px;}
+.forum-compose textarea:focus{border-color:rgba(34,197,94,.4);}
+.forum-compose-row{display:flex;gap:10px;flex-wrap:wrap;}
+.fc-inp{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px 12px;color:#f0fdf4;font-family:'DM Sans',sans-serif;font-size:.82rem;outline:none;flex:1;min-width:120px;}
+.fc-inp:focus{border-color:rgba(34,197,94,.4);}
+.btn-post{padding:9px 20px;background:#22c55e;border:none;border-radius:9px;color:#0a1a0e;font-weight:700;font-size:.82rem;cursor:pointer;transition:opacity .2s;}
+.btn-post:hover{opacity:.85;}
+
+/* ── Daily tip ── */
+.tip-banner{background:linear-gradient(135deg,rgba(168,255,62,.06),rgba(34,197,94,.04));border:1px solid rgba(168,255,62,.15);border-radius:14px;padding:18px;display:flex;gap:14px;align-items:flex-start;margin-bottom:20px;}
+.tip-icon{font-size:1.6rem;flex-shrink:0;}
+.tip-label{font-size:.62rem;color:#a8ff3e;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;}
+.tip-text{font-size:.85rem;line-height:1.65;color:rgba(240,253,242,.85);}
+
+/* ── Spinner ── */
+.spinner{width:18px;height:18px;border:2px solid rgba(34,197,94,.2);border-top-color:#22c55e;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Inline chat ── */
+.ic-lang{padding:4px 12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:99px;font-size:.72rem;cursor:pointer;white-space:nowrap;color:rgba(134,239,172,.5);transition:all .2s;}
+.ic-lang.active{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3);color:#4ade80;}
+.ic-chip{padding:5px 12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:99px;font-size:.72rem;cursor:pointer;white-space:nowrap;color:rgba(134,239,172,.5);transition:all .2s;}
+.ic-chip:hover{border-color:rgba(74,222,128,.22);color:#4ade80;}
+.ic-msg{display:flex;gap:8px;max-width:85%;}
+.ic-msg.user{align-self:flex-end;flex-direction:row-reverse;}
+.ic-msg.bot{align-self:flex-start;}
+.ic-bubble{padding:10px 13px;border-radius:12px;font-size:.84rem;line-height:1.55;white-space:pre-wrap;word-break:break-word;}
+.ic-msg.bot .ic-bubble{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:3px 12px 12px 12px;color:#f0fdf4;}
+.ic-msg.user .ic-bubble{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.22);border-radius:12px 3px 12px 12px;color:#f0fdf4;}
+.ic-typing{display:flex;gap:3px;padding:10px 13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:3px 12px 12px 12px;width:fit-content;}
+.ic-typing span{width:6px;height:6px;border-radius:50%;background:rgba(134,239,172,.4);animation:icbounce .9s infinite;}
+.ic-typing span:nth-child(2){animation-delay:.15s;}
+.ic-typing span:nth-child(3){animation-delay:.3s;}
+@keyframes icbounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+/* ── Why Krishi Rakshak banner ── */
+.why-banner{background:linear-gradient(135deg,rgba(239,68,68,.08),rgba(245,158,11,.06));border:1px solid rgba(239,68,68,.2);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.why-icon{font-size:1.5rem;flex-shrink:0;}
+.why-stat{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:#fca5a5;}
+.why-text{font-size:.82rem;color:rgba(240,253,242,.65);line-height:1.5;margin-top:2px;}
+
+/* ── How it works ── */
+.hiw-section{margin-bottom:24px;}
+.hiw-title{font-size:.65rem;color:rgba(134,239,172,.45);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;}
+.hiw-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+@media(max-width:600px){.hiw-steps{grid-template-columns:1fr;}}
+.hiw-step{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:16px 14px;text-align:center;position:relative;}
+.hiw-step::after{content:'→';position:absolute;right:-10px;top:50%;transform:translateY(-50%);color:rgba(134,239,172,.25);font-size:1rem;z-index:1;}
+.hiw-step:last-child::after{display:none;}
+@media(max-width:600px){.hiw-step::after{content:'↓';right:50%;bottom:-12px;top:auto;transform:translateX(50%);}}
+.hiw-num{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(134,239,172,.35);margin-bottom:8px;letter-spacing:.08em;}
+.hiw-emoji{font-size:2rem;margin-bottom:8px;display:block;}
+.hiw-label{font-family:'Syne',sans-serif;font-size:.88rem;font-weight:700;margin-bottom:4px;}
+.hiw-desc{font-size:.72rem;color:rgba(134,239,172,.45);line-height:1.5;}
+
+/* ── Mobile ── */
+@media(max-width:768px){
+  .sidebar{display:none;}
+  .app-shell{flex-direction:column;}
+  .spa-section{padding:16px 14px 80px;}
+  .scan-hero{grid-template-columns:1fr;}
+}
+/* Mobile bottom nav */
+.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:300;background:rgba(7,15,9,.97);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.07);height:60px;flex-direction:row;}
+.mob-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:rgba(134,239,172,.4);font-size:.58rem;border:none;background:none;transition:color .2s;min-height:44px;}
+.mob-nav-item:hover,.mob-nav-item.active{color:#4ade80;}
+.mob-nav-icon{font-size:1.2rem;line-height:1;}
+@media(max-width:768px){.mob-nav{display:flex;}.main-content{padding-bottom:60px;}}
+</style>
+</head>
+<body data-page="home">
+
+<!-- ════ APP SHELL ════ -->
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand">
+      <svg width="26" height="26" viewBox="0 0 40 40"><path d="M20 4C13 10 11 17 13 24a7 7 0 0014 0c2-7 0-14-7-20z" fill="#22c55e"/><path d="M14 19c-5 2-9 5-8 10 3-1 6-3 7-6" fill="#4ade80" opacity=".7"/><path d="M26 19c5 2 9 5 8 10-3-1-6-3-7-6" fill="#4ade80" opacity=".7"/></svg>
+      <span class="sb-brand-name">Krishi Rakshak</span>
+    </div>
+    <nav class="sb-nav">
+      <button class="sb-item active" data-sec="scan" onclick="showSection('scan',this)"><span class="si-icon">🔬</span> Scan Crop</button>
+      <button class="sb-item" data-sec="weather" onclick="showSection('weather',this)"><span class="si-icon">🌦️</span> Weather</button>
+      <button class="sb-item" data-sec="market" onclick="showSection('market',this)"><span class="si-icon">💰</span> Mandi Prices</button>
+      <button class="sb-item" data-sec="chat" onclick="showSection('chat',this)"><span class="si-icon">🤖</span> Krishi Mitra AI</button>
+      <div class="sb-divider"></div>
+      <button class="sb-item" data-sec="irrigation" onclick="showSection('irrigation',this)"><span class="si-icon">💧</span> Irrigation</button>
+      <button class="sb-item" data-sec="soil" onclick="showSection('soil',this)"><span class="si-icon">🌱</span> Soil Calculator</button>
+      <div class="sb-divider"></div>
+      <button class="sb-item" data-sec="history" onclick="showSection('history',this)"><span class="si-icon">📊</span> Scan History</button>
+    </nav>
+    <div class="sb-footer">
+      <div class="sb-user">
+        <div class="sb-av" id="sb-av">K</div>
+        <div><div class="sb-user-name" id="sb-name">Farmer</div><div class="sb-user-crop" id="sb-crop">—</div></div>
+        <button class="sb-logout" onclick="logout()" title="Sign out">⎋</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content" id="main-content">
+
+    <!-- ── SCAN SECTION (default) ── -->
+    <div class="spa-section active" id="sec-scan">
+      <div class="sec-title">🔬 Scan Your Crop</div>
+      <div class="sec-sub">Upload a leaf photo — AI diagnosis in under 2 seconds</div>
+
+      <!-- Why Krishi Rakshak -->
+      <div class="why-banner">
+        <div class="why-icon">⚠️</div>
+        <div>
+          <div class="why-stat">₹50,000 crore lost to crop disease every year in India</div>
+          <div class="why-text">Krishi Rakshak gives every farmer instant AI diagnosis, treatment plans, and market intelligence — right from their phone.</div>
+        </div>
+      </div>
+
+      <!-- How it works -->
+      <div class="hiw-section">
+        <div class="hiw-title">How it works</div>
+        <div class="hiw-steps">
+          <div class="hiw-step">
+            <div class="hiw-num">STEP 01</div>
+            <span class="hiw-emoji">📸</span>
+            <div class="hiw-label">Scan</div>
+            <div class="hiw-desc">Photograph a diseased leaf using your phone camera or upload from gallery</div>
+          </div>
+          <div class="hiw-step">
+            <div class="hiw-num">STEP 02</div>
+            <span class="hiw-emoji">🧠</span>
+            <div class="hiw-label">Diagnose</div>
+            <div class="hiw-desc">Our AI model identifies the disease with confidence score in under 2 seconds</div>
+          </div>
+          <div class="hiw-step">
+            <div class="hiw-num">STEP 03</div>
+            <span class="hiw-emoji">💊</span>
+            <div class="hiw-label">Act</div>
+            <div class="hiw-desc">Get treatment steps, pesticide names, and prevention tips in your language</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip-banner" id="daily-tip-banner">
+        <div class="tip-icon">💡</div>
+        <div><div class="tip-label">Today's Advisory</div><div class="tip-text" id="tip-text"><span class="spinner"></span></div></div>
+      </div>
+
+      <div class="scan-hero">
+        <!-- Drop zone -->
+        <div class="drop-zone-spa" id="dz">
+          <input type="file" id="file-in" accept="image/*" style="display:none" onchange="onFileSelect(this.files[0])"/>
+          <div id="dz-empty">
+            <div class="dz-icon">🌿</div>
+            <div class="dz-title">Drop leaf image here</div>
+            <div class="dz-hint">JPEG or PNG · Max 10MB · Natural daylight works best</div>
+            <div style="margin-top:14px">
+              <button type="button" onclick="event.stopPropagation();document.getElementById('file-in').click()" style="padding:9px 20px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);border-radius:10px;color:#4ade80;font-size:.82rem;font-weight:600;cursor:pointer;">Browse Files</button>
+            </div>
+          </div>
+          <img id="dz-preview" class="dz-preview-img" alt="preview"/>
+        </div>
+
+        <!-- Controls -->
+        <div class="scan-panel-right">
+          <button class="btn-scan-primary" id="btn-scan" onclick="runScan()" disabled>
+            <span>🔬</span> Analyze Disease
+          </button>
+          <button class="btn-cam" onclick="openCamera()">
+            <span>📷</span> Use Camera
+          </button>
+          <div class="scan-tips">
+            <div class="scan-tips-title">Tips for best results</div>
+            <div class="scan-tip-item"><span class="scan-tip-dot"></span>Use natural daylight, avoid shadows</div>
+            <div class="scan-tip-item"><span class="scan-tip-dot"></span>Focus on the affected leaf area</div>
+            <div class="scan-tip-item"><span class="scan-tip-dot"></span>One leaf per scan works best</div>
+            <div class="scan-tip-item"><span class="scan-tip-dot"></span>Hold camera steady, avoid blur</div>
+          </div>
+          <div class="scan-progress" id="scan-progress">
+            <div class="sp-track"><div class="sp-fill" id="sp-fill"></div></div>
+            <div class="sp-steps">
+              <span class="sp-step" id="sp1"><em></em> Processing</span>
+              <span class="sp-step" id="sp2"><em></em> AI Model</span>
+              <span class="sp-step" id="sp3"><em></em> Diagnosis</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result card -->
+      <div class="result-card" id="result-card">
+        <!-- Hero banner -->
+        <div class="rc-banner" id="rc-banner">
+          <div class="rc-img-wrap">
+            <img id="rc-img" class="rc-img" src="" alt="scanned leaf"/>
+            <span class="rc-img-badge" id="rc-img-badge">—</span>
+          </div>
+          <div class="rc-info">
+            <div class="rc-crop-tag" id="rc-crop-tag">Crop Detection</div>
+            <div class="rc-name" id="rc-name">—</div>
+            <div class="rc-desc" id="rc-desc"></div>
+            <div class="rc-conf-wrap">
+              <div class="rc-conf-label">
+                <span class="rc-conf-text">AI Confidence</span>
+                <span class="rc-conf-pct" id="rc-conf-pct">0%</span>
+              </div>
+              <div class="rc-conf-track">
+                <div class="rc-conf-fill" id="rc-conf-fill" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="rc-actions">
+              <button class="rc-btn rc-btn-wa" id="rc-wa">📱 WhatsApp</button>
+              <button class="rc-btn rc-btn-pdf" onclick="exportPDF()">📄 PDF Report</button>
+              <button class="rc-btn rc-btn-new" onclick="resetScan()">🔄 New Scan</button>
+            </div>
+          </div>
+        </div>
+        <!-- Tabs -->
+        <div class="rc-tabs">
+          <button class="rc-tab active" onclick="rcTab(this,'symptoms')">⚠️ Symptoms</button>
+          <button class="rc-tab" onclick="rcTab(this,'treatment')">💊 Treatment</button>
+          <button class="rc-tab" onclick="rcTab(this,'prevention')">🛡️ Prevention</button>
+          <button class="rc-tab" onclick="rcTab(this,'alts')">🔀 Alternatives</button>
+        </div>
+        <div class="rc-tab-content" id="rc-tab-content"></div>
+      </div>
+    </div>
+
+    <!-- ── WEATHER SECTION ── -->
+    <div class="spa-section" id="sec-weather">
+      <div class="sec-title">🌦️ Weather Forecast</div>
+      <div class="sec-sub">Hyper-local 7-day forecast with crop-specific alerts</div>
+      <div class="loc-bar">
+        <input class="loc-input" id="weather-loc" placeholder="Enter village, district or city…"/>
+        <button class="loc-btn-sm" onclick="searchWeatherLoc()">Search</button>
+        <button class="loc-btn-sm" onclick="geoWeather()">📍 My Location</button>
+      </div>
+      <div id="weather-content"><div style="color:rgba(134,239,172,.4);font-size:.85rem;padding:20px 0">Enter a location above or allow GPS to load weather.</div></div>
+    </div>
+
+    <!-- ── MARKET SECTION ── -->
+    <div class="spa-section" id="sec-market">
+      <div class="sec-title">💰 Live Mandi Prices</div>
+      <div class="sec-sub">Compare markets, track 7-day trends</div>
+      <div class="market-form">
+        <select class="mk-sel-sm" id="mk-crop">
+          <option value="Wheat">🌾 Wheat</option><option value="Tomato">🍅 Tomato</option>
+          <option value="Paddy">🌾 Paddy</option><option value="Onion">🧅 Onion</option>
+          <option value="Potato">🥔 Potato</option><option value="Maize">🌽 Maize</option>
+          <option value="Chilli">🌶️ Chilli</option><option value="Mango">🥭 Mango</option>
+          <option value="Banana">🍌 Banana</option><option value="Sugarcane">🎋 Sugarcane</option>
+        </select>
+        <select class="mk-sel-sm" id="mk-state">
+          <option value="Maharashtra">Maharashtra</option><option value="Punjab">Punjab</option>
+          <option value="Uttar Pradesh">Uttar Pradesh</option><option value="Karnataka">Karnataka</option>
+          <option value="Andhra Pradesh">Andhra Pradesh</option><option value="Tamil Nadu">Tamil Nadu</option>
+          <option value="Gujarat">Gujarat</option><option value="Rajasthan">Rajasthan</option>
+          <option value="West Bengal">West Bengal</option><option value="Bihar">Bihar</option>
+          <option value="Haryana">Haryana</option><option value="Madhya Pradesh">Madhya Pradesh</option>
+        </select>
+        <button class="loc-btn-sm" onclick="loadMarket()">Search →</button>
+      </div>
+      <div id="market-content"><div style="color:rgba(134,239,172,.4);font-size:.85rem;padding:20px 0">Select crop and state above to see live prices.</div></div>
+    </div>
+
+    <!-- ── CHAT SECTION ── -->
+    <div class="spa-section" id="sec-chat">
+      <div class="sec-title">🤖 Krishi Mitra AI</div>
+      <div class="sec-sub">Your 24/7 multilingual farm advisor</div>
+      <div id="inline-chat-wrap" style="display:flex;flex-direction:column;height:calc(100vh - 220px);min-height:400px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;">
+        <!-- Lang bar -->
+        <div style="display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.06);overflow-x:auto;scrollbar-width:none;flex-shrink:0;">
+          <button class="ic-lang active" data-lang="English" onclick="icSetLang(this)">🇬🇧 English</button>
+          <button class="ic-lang" data-lang="Hindi" onclick="icSetLang(this)">🇮🇳 हिंदी</button>
+          <button class="ic-lang" data-lang="Telugu" onclick="icSetLang(this)">తెలుగు</button>
+          <button class="ic-lang" data-lang="Tamil" onclick="icSetLang(this)">தமிழ்</button>
+          <button class="ic-lang" data-lang="Marathi" onclick="icSetLang(this)">मराठी</button>
+          <button class="ic-lang" data-lang="Bengali" onclick="icSetLang(this)">বাংলা</button>
+        </div>
+        <!-- Messages -->
+        <div id="ic-messages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin;scrollbar-color:rgba(34,197,94,.2) transparent;"></div>
+        <!-- Quick chips -->
+        <div style="display:flex;gap:6px;padding:8px 12px;overflow-x:auto;scrollbar-width:none;border-top:1px solid rgba(255,255,255,.05);flex-shrink:0;">
+          <button class="ic-chip" onclick="icChip('My crop has yellow spots on leaves')">🌿 Yellow spots</button>
+          <button class="ic-chip" onclick="icChip('What fertiliser should I apply?')">💊 Fertiliser</button>
+          <button class="ic-chip" onclick="icChip('Tell me about PM-KISAN scheme')">🏛️ PM-KISAN</button>
+          <button class="ic-chip" onclick="icChip('When should I irrigate my crop?')">💧 Irrigation</button>
+        </div>
+        <!-- Input -->
+        <div style="display:flex;gap:8px;padding:10px 12px;border-top:1px solid rgba(255,255,255,.07);flex-shrink:0;">
+          <input id="ic-input" placeholder="Ask anything about your farm…" style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 14px;color:#f0fdf4;font-family:'DM Sans',sans-serif;font-size:.85rem;outline:none;" onkeydown="if(event.key==='Enter')icSend()"/>
+          <button id="ic-send" onclick="icSend()" style="padding:10px 18px;background:#22c55e;border:none;border-radius:10px;color:#0a1a0e;font-weight:700;font-size:.85rem;cursor:pointer;transition:opacity .2s;flex-shrink:0;">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── IRRIGATION SECTION ── -->
+    <div class="spa-section" id="sec-irrigation">
+      <div class="sec-title">💧 Irrigation Planner</div>
+      <div class="sec-sub">ET₀-based smart irrigation schedule for your crop</div>
+      <div id="irrigation-content">
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:22px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+            <div class="fg"><label style="font-size:.65rem;color:rgba(134,239,172,.45);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;">Crop</label>
+              <select id="irr-crop" class="mk-sel-sm" style="width:100%">
+                <option value="paddy">🌾 Paddy</option><option value="wheat">🌾 Wheat</option>
+                <option value="tomato">🍅 Tomato</option><option value="potato">🥔 Potato</option>
+                <option value="maize">🌽 Maize</option><option value="chilli">🌶️ Chilli</option>
+                <option value="mango">🥭 Mango</option><option value="banana">🍌 Banana</option>
+                <option value="sugarcane">🎋 Sugarcane</option>
+              </select>
+            </div>
+            <div class="fg"><label style="font-size:.65rem;color:rgba(134,239,172,.45);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;">Growth Stage</label>
+              <select id="irr-stage" class="mk-sel-sm" style="width:100%">
+                <option value="initial">Initial</option><option value="development">Development</option>
+                <option value="mid">Mid Season</option><option value="late">Late Season</option>
+              </select>
+            </div>
+            <div class="fg"><label style="font-size:.65rem;color:rgba(134,239,172,.45);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;">Field Area (Acres)</label>
+              <input id="irr-area" type="number" value="1" min="0.1" step="0.1" class="loc-input" style="width:100%"/>
+            </div>
+            <div class="fg"><label style="font-size:.65rem;color:rgba(134,239,172,.45);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;">Soil Type</label>
+              <select id="irr-soil" class="mk-sel-sm" style="width:100%">
+                <option value="loamy">Loamy</option><option value="sandy">Sandy</option>
+                <option value="clay">Clay</option><option value="black">Black Cotton</option>
+              </select>
+            </div>
+            <div class="fg"><label style="font-size:.65rem;color:rgba(134,239,172,.45);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;">Method</label>
+              <select id="irr-method" class="mk-sel-sm" style="width:100%">
+                <option value="drip">Drip</option><option value="sprinkler">Sprinkler</option><option value="flood">Flood</option>
+              </select>
+            </div>
+          </div>
+          <button class="loc-btn-sm" onclick="loadIrrigation()" style="width:100%;padding:12px;font-size:.88rem;">Calculate Schedule →</button>
+          <div id="irr-result" style="margin-top:16px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SOIL SECTION ── -->
+    <div class="spa-section" id="sec-soil">
+      <div class="sec-title">🌱 Soil Calculator</div>
+      <div class="sec-sub">ICAR-approved fertiliser recommendations for your crop</div>
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:22px;">
+        <div style="font-size:.85rem;color:rgba(134,239,172,.6);margin-bottom:20px;">Select your crop to get ICAR-recommended fertiliser doses per acre.</div>
+        <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap;">
+          <div>
+            <label style="font-size:.65rem;color:rgba(134,239,172,.45);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:6px;">YOUR CROP</label>
+            <select id="soil-crop-sel" class="mk-sel-sm" style="min-width:200px;">
+              <option value="paddy">🌾 Paddy / Rice</option>
+              <option value="wheat">🌾 Wheat</option>
+              <option value="tomato">🍅 Tomato</option>
+              <option value="potato">🥔 Potato</option>
+              <option value="maize">🌽 Maize</option>
+              <option value="chilli">🌶️ Chilli</option>
+              <option value="mango">🥭 Mango</option>
+              <option value="banana">🍌 Banana</option>
+              <option value="sugarcane">🎋 Sugarcane</option>
+            </select>
+          </div>
+          <button onclick="updateSoilGuide()" class="loc-btn-sm" style="padding:10px 22px;font-size:.85rem;font-weight:700;">Get Recommendations →</button>
+        </div>
+        <div id="soil-guide-content"></div>
+      </div>
+    </div>
+
+    <!-- ── HISTORY SECTION ── -->
+    <div class="spa-section" id="sec-history">
+      <div class="sec-title">📊 Scan History</div>
+      <div class="sec-sub">All your crop diagnoses</div>
+      <div id="history-list"><div class="spinner"></div></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Mobile bottom nav -->
+<nav class="mob-nav" id="mob-nav">
+  <button class="mob-nav-item active" data-sec="scan" onclick="showSection('scan',this);syncMobNav(this)"><span class="mob-nav-icon">🔬</span>Scan</button>
+  <button class="mob-nav-item" data-sec="weather" onclick="showSection('weather',this);syncMobNav(this)"><span class="mob-nav-icon">🌦️</span>Weather</button>
+  <button class="mob-nav-item" data-sec="market" onclick="showSection('market',this);syncMobNav(this)"><span class="mob-nav-icon">💰</span>Market</button>
+  <button class="mob-nav-item" data-sec="chat" onclick="showSection('chat',this);syncMobNav(this)"><span class="mob-nav-icon">🤖</span>AI Chat</button>
+  <button class="mob-nav-item" data-sec="history" onclick="showSection('history',this);syncMobNav(this)"><span class="mob-nav-icon">📊</span>History</button>
+</nav>
+
+<!-- Camera modal -->
+<div id="cam-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:5000;align-items:center;justify-content:center;">
+  <div style="background:#0c1f12;border:1px solid rgba(74,222,128,.2);border-radius:20px;padding:20px;width:min(500px,95vw);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <span style="font-family:'Syne',sans-serif;font-weight:700">📷 Live Camera</span>
+      <button onclick="closeCamera()" style="background:none;border:none;color:rgba(134,239,172,.5);font-size:1.2rem;cursor:pointer;">✕</button>
+    </div>
+    <div style="position:relative;border-radius:14px;overflow:hidden;background:#050c07;aspect-ratio:4/3;">
+      <video id="cam-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;display:block;"></video>
+      <canvas id="cam-canvas" style="display:none;"></canvas>
+    </div>
+    <button onclick="captureCamera()" style="width:100%;margin-top:14px;padding:13px;background:#22c55e;border:none;border-radius:12px;color:#0a1a0e;font-weight:700;font-size:.95rem;cursor:pointer;">📸 Capture &amp; Analyze</button>
+  </div>
+</div>
+
+<!-- home.html is a full SPA — nav.js injects a top nav we don't want here -->
+<!-- We only load config.js and home-app.js -->
+<script src="config.js"></script>
+<script src="bg.js"></script>
+<script src="home-app.js"></script>
+</body>
+</html>

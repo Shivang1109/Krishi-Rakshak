@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="krishi-api-base" content="http://127.0.0.1:8000"/>
+<title>Farmer Forum — Krishi Rakshak</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{--g:#22c55e;--lime:#a8ff3e;--bg:#070f09;--card:rgba(255,255,255,.04);--bdr:rgba(255,255,255,.08);--bdrh:rgba(74,222,128,.22);--t1:#f0fdf4;--tm:rgba(134,239,172,.45);--fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'JetBrains Mono',monospace;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:radial-gradient(ellipse 90% 65% at 50% -5%,#2a6e3a 0%,#183421 40%,#112a17 70%);color:var(--t1);font-family:var(--fb);min-height:100vh;}
+a{color:inherit;text-decoration:none;}
+.nav{position:sticky;top:0;z-index:100;background:rgba(7,15,9,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--bdr);padding:0 16px;}
+.nav-i{max-width:1200px;margin:0 auto;height:52px;display:flex;align-items:center;gap:10px;}
+.nav-logo{font-family:var(--fh);font-weight:800;font-size:.9rem;display:flex;align-items:center;gap:6px;}
+.nav-links{display:flex;gap:2px;margin-left:auto;flex-wrap:wrap;}
+.nav-links a{color:var(--tm);font-size:.7rem;padding:4px 8px;border-radius:6px;transition:all .2s;}
+.nav-links a:hover,.nav-links a.act{color:var(--t1);background:rgba(255,255,255,.06);}
+.main{max-width:900px;margin:0 auto;padding:24px 14px 80px;}
+h1{font-family:var(--fh);font-size:1.6rem;font-weight:800;margin-bottom:4px;}
+.sub{color:var(--tm);font-size:.83rem;margin-bottom:20px;}
+/* TOOLBAR */
+.toolbar{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center;}
+.sort-tabs{display:flex;gap:4px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:10px;padding:3px;}
+.sort-tab{padding:6px 14px;border-radius:7px;font-size:.75rem;cursor:pointer;color:var(--tm);transition:all .2s;border:none;background:none;}
+.sort-tab.active{background:rgba(34,197,94,.15);color:#4ade80;}
+.filter-chips{display:flex;gap:5px;flex-wrap:wrap;}
+.fchip{padding:5px 12px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:99px;font-size:.72rem;cursor:pointer;color:var(--tm);transition:all .2s;}
+.fchip.active{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:#4ade80;}
+.btn-new{margin-left:auto;padding:8px 18px;background:var(--g);border:none;border-radius:9px;color:#0a1a0e;font-weight:700;font-size:.8rem;cursor:pointer;white-space:nowrap;}
+/* POST CARDS */
+.post-card{background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:16px 18px;margin-bottom:10px;cursor:pointer;transition:border-color .2s;}
+.post-card:hover{border-color:var(--bdrh);}
+.pc-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;}
+.pc-tags{display:flex;gap:6px;flex-wrap:wrap;flex:1;}
+.crop-tag{padding:2px 9px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:99px;font-size:.65rem;color:#4ade80;}
+.state-tag{padding:2px 9px;background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.15);border-radius:99px;font-size:.65rem;color:#93c5fd;}
+.expert-badge{padding:2px 9px;background:rgba(168,255,62,.1);border:1px solid rgba(168,255,62,.2);border-radius:99px;font-size:.65rem;color:#a8ff3e;}
+.pc-title{font-size:.9rem;font-weight:600;margin-bottom:5px;line-height:1.4;}
+.pc-meta{display:flex;gap:12px;font-size:.72rem;color:var(--tm);}
+.pc-upvote{display:flex;align-items:center;gap:4px;cursor:pointer;padding:3px 8px;border-radius:6px;transition:all .2s;}
+.pc-upvote:hover{background:rgba(34,197,94,.08);color:#4ade80;}
+/* EMPTY */
+.empty{text-align:center;padding:48px 20px;color:var(--tm);}
+.spinner{width:32px;height:32px;border:3px solid rgba(34,197,94,.15);border-top-color:#22c55e;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;align-items:center;justify-content:center;padding:16px;}
+.modal-overlay.open{display:flex;}
+.modal{background:#1a3d22;border:1px solid rgba(74,222,128,.15);border-radius:18px;padding:24px;width:min(560px,100%);max-height:90vh;overflow-y:auto;}
+.modal-title{font-family:var(--fh);font-size:1rem;font-weight:700;margin-bottom:16px;}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.fg label{font-size:.65rem;color:var(--tm);text-transform:uppercase;letter-spacing:.07em;}
+.fg input,.fg select,.fg textarea{background:rgba(255,255,255,.05);border:1px solid var(--bdr);border-radius:8px;padding:9px 12px;color:var(--t1);font-family:var(--fb);font-size:.86rem;outline:none;transition:border .2s;width:100%;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:rgba(34,197,94,.4);}
+.fg select option{background:#0f1f12;}
+.fg textarea{resize:vertical;min-height:80px;}
+.modal-btns{display:flex;gap:10px;margin-top:16px;}
+.btn{padding:10px 22px;background:var(--g);border:none;border-radius:9px;color:#0a1a0e;font-weight:700;font-size:.85rem;cursor:pointer;}
+.btn-ghost{padding:9px 18px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:9px;color:var(--tm);font-size:.83rem;cursor:pointer;}
+/* SIMILAR */
+.similar-box{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px;margin-bottom:12px;font-size:.78rem;}
+.similar-item{padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;color:rgba(240,253,242,.7);}
+.similar-item:last-child{border-bottom:none;}
+.similar-item:hover{color:#4ade80;}
+/* POST DETAIL */
+.detail-panel{display:none;}
+.detail-panel.open{display:block;}
+.feed-panel{display:block;}
+.feed-panel.hidden{display:none;}
+.back-btn{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--tm);cursor:pointer;margin-bottom:16px;transition:color .2s;}
+.back-btn:hover{color:var(--t1);}
+.answer-card{background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:12px;padding:14px 16px;margin-bottom:8px;}
+.answer-card.expert{border-color:rgba(168,255,62,.2);background:rgba(168,255,62,.04);}
+.ans-meta{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:.72rem;color:var(--tm);}
+.ans-body{font-size:.85rem;line-height:1.55;}
+.ans-upvote{display:flex;align-items:center;gap:4px;cursor:pointer;padding:3px 8px;border-radius:6px;font-size:.72rem;transition:all .2s;margin-top:8px;width:fit-content;}
+.ans-upvote:hover{background:rgba(34,197,94,.08);color:#4ade80;}
+.img-upload-zone{border:1px dashed rgba(74,222,128,.2);border-radius:8px;cursor:pointer;transition:border-color .2s;min-height:48px;display:flex;align-items:center;justify-content:center;}
+.img-upload-zone:hover{border-color:rgba(74,222,128,.4);background:rgba(34,197,94,.03);}
+.post-img{max-width:100%;border-radius:10px;margin:10px 0;border:1px solid var(--bdr);}
+.lang-tag{padding:2px 9px;background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.15);border-radius:99px;font-size:.65rem;color:#c084fc;}
+</style>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="nav.css"/>
+</head>
+<body data-page="forum">
+<div class="main">
+<h1>👨‍🌾 Farmer Community Forum</h1>
+<p class="sub">Ask questions, share knowledge, get answers from fellow farmers and experts</p>
+
+<div class="kr-community-tabs" id="community-tabs">
+  <button class="kr-community-tab active" onclick="setCommunityTab(this,'')">🌍 All Farmers</button>
+  <button class="kr-community-tab" onclick="setCommunityTab(this,'Paddy')">🌾 Paddy</button>
+  <button class="kr-community-tab" onclick="setCommunityTab(this,'Tomato')">🍅 Tomato</button>
+  <button class="kr-community-tab" onclick="setCommunityTab(this,'Wheat')">🌾 Wheat</button>
+  <button class="kr-community-tab" onclick="setCommunityTab(this,'Cotton')">🧶 Cotton</button>
+  <button class="kr-community-tab" onclick="setCommunityTab(this,'Potato')">🥔 Potato</button>
+</div>
+<div class="toolbar">
+  <div class="sort-tabs">
+    <button class="sort-tab active" onclick="setSort('recent',this)">Recent</button>
+    <button class="sort-tab" onclick="setSort('popular',this)">Popular</button>
+    <button class="sort-tab" onclick="setSort('unanswered',this)">Unanswered</button>
+  </div>
+  <div class="filter-chips" id="crop-filters">
+    <div class="fchip active" data-crop="" onclick="setCrop(this)">All Crops</div>
+    <div class="fchip" data-crop="Paddy" onclick="setCrop(this)">🌾 Paddy</div>
+    <div class="fchip" data-crop="Wheat" onclick="setCrop(this)">🌾 Wheat</div>
+    <div class="fchip" data-crop="Tomato" onclick="setCrop(this)">🍅 Tomato</div>
+    <div class="fchip" data-crop="Potato" onclick="setCrop(this)">🥔 Potato</div>
+    <div class="fchip" data-crop="Chilli" onclick="setCrop(this)">🌶️ Chilli</div>
+  </div>
+  <button class="btn-new" onclick="openNewPost()">+ Ask Question</button>
+</div>
+
+  <div class="sort-tabs">
+    <button class="sort-tab active" onclick="setSort('recent',this)">Recent</button>
+    <button class="sort-tab" onclick="setSort('popular',this)">Popular</button>
+    <button class="sort-tab" onclick="setSort('unanswered',this)">Unanswered</button>
+  </div>
+  <div class="filter-chips" id="crop-filters">
+    <div class="fchip active" data-crop="" onclick="setCrop(this)">All Crops</div>
+    <div class="fchip" data-crop="Paddy" onclick="setCrop(this)">🌾 Paddy</div>
+    <div class="fchip" data-crop="Wheat" onclick="setCrop(this)">🌾 Wheat</div>
+    <div class="fchip" data-crop="Tomato" onclick="setCrop(this)">🍅 Tomato</div>
+    <div class="fchip" data-crop="Potato" onclick="setCrop(this)">�� Potato</div>
+    <div class="fchip" data-crop="Chilli" onclick="setCrop(this)">🌶️ Chilli</div>
+  </div>
+  <button class="btn-new" onclick="openNewPost()">+ Ask Question</button>
+</div>
+<div id="posts-list"><div class="empty"><div class="spinner"></div>Loading posts…</div></div>
+</div>
+
+<!-- DETAIL -->
+<div class="detail-panel" id="detail-panel">
+<div class="back-btn" onclick="showFeed()">← Back to forum</div>
+<div id="detail-content"></div>
+</div>
+
+<!-- NEW POST MODAL -->
+<div class="modal-overlay" id="new-post-modal">
+<div class="modal">
+  <div class="modal-title">✍️ Ask a Question</div>
+  <div id="similar-box" style="display:none" class="similar-box">
+    <div style="font-weight:600;margin-bottom:6px;color:#fbbf24">Similar questions found — did any of these answer you?</div>
+    <div id="similar-list"></div>
+  </div>
+  <div class="fg"><label>Title / Question</label><input id="np-title" placeholder="e.g. Yellow leaves on my paddy — what disease?" oninput="checkSimilar()"/></div>
+  <div class="fg"><label>Describe your problem in detail</label><textarea id="np-body" placeholder="Describe symptoms, when it started, what you've tried…" rows="4"></textarea></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+  <div class="fg"><label>Crop</label><select id="np-crop"><option value="">Select crop</option><option>Paddy</option><option>Wheat</option><option>Maize</option><option>Tomato</option><option>Potato</option><option>Chilli</option><option>Mango</option><option>Banana</option><option>Sugarcane</option><option>Onion</option><option>Cotton</option><option>Groundnut</option></select></div>
+  <div class="fg"><label>State</label><select id="np-state"><option value="">Select state</option><option>Maharashtra</option><option>Punjab</option><option>Uttar Pradesh</option><option>Bihar</option><option>West Bengal</option><option>Madhya Pradesh</option><option>Karnataka</option><option>Andhra Pradesh</option><option>Gujarat</option><option>Rajasthan</option><option>Tamil Nadu</option><option>Telangana</option><option>Haryana</option><option>Odisha</option></select></div>
+  </div>
+  <div class="fg"><label>Language</label><select id="np-lang"><option>English</option><option>Hindi</option><option>Telugu</option><option>Tamil</option><option>Marathi</option><option>Bengali</option></select></div>
+  <div class="fg"><label>Photo of affected crop (optional)</label>
+    <div class="img-upload-zone" id="np-img-zone" onclick="document.getElementById('np-img').click()">
+      <input type="file" id="np-img" accept="image/*" style="display:none" onchange="previewImg(this,'np-img-preview','np-img-zone')"/>
+      <div id="np-img-preview" style="display:none;text-align:center"><img id="np-img-thumb" style="max-height:120px;border-radius:8px;max-width:100%"/><div style="font-size:.7rem;color:var(--tm);margin-top:4px">Click to change</div></div>
+      <div id="np-img-placeholder" style="text-align:center;padding:16px;color:var(--tm);font-size:.8rem">📷 Tap to attach a photo</div>
+    </div>
+  </div>
+  <div class="modal-btns">
+    <button class="btn-ghost" onclick="closeNewPost()">Cancel</button>
+    <button class="btn" onclick="submitPost()">Post Question →</button>
+  </div>
+</div>
+</div>
+
+<!-- ANSWER MODAL -->
+<div class="modal-overlay" id="ans-modal">
+<div class="modal">
+  <div class="modal-title">💬 Add Your Answer</div>
+  <div class="fg"><label>Your answer</label><textarea id="ans-body" placeholder="Share your experience or solution…" rows="5"></textarea></div>
+  <div class="fg"><label>Photo (optional)</label>
+    <div class="img-upload-zone" id="ans-img-zone" onclick="document.getElementById('ans-img').click()">
+      <input type="file" id="ans-img" accept="image/*" style="display:none" onchange="previewImg(this,'ans-img-preview','ans-img-zone')"/>
+      <div id="ans-img-preview" style="display:none;text-align:center"><img id="ans-img-thumb" style="max-height:100px;border-radius:8px;max-width:100%"/><div style="font-size:.7rem;color:var(--tm);margin-top:4px">Click to change</div></div>
+      <div id="ans-img-placeholder" style="text-align:center;padding:12px;color:var(--tm);font-size:.8rem">📷 Attach a photo</div>
+    </div>
+  </div>
+  <div class="modal-btns">
+    <button class="btn-ghost" onclick="closeAnsModal()">Cancel</button>
+    <button class="btn" onclick="submitAnswer()">Post Answer →</button>
+  </div>
+</div>
+</div>
+</div>
+
+<script>
+const API=window.KRISHI_API_BASE||'http://127.0.0.1:8000';
+let curSort='recent',curCrop='',curLang='',curPostId=null,myState='';
+const SESSION=getSession();
+// Detect user's state from localStorage session
+try{const u=JSON.parse(localStorage.getItem('kr_session'));if(u&&u.state)myState=u.state;}catch{}
+
+function getSession(){
+  let s=localStorage.getItem('kr_forum_session');
+  if(!s){
+    s = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : 'sess_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    localStorage.setItem('kr_forum_session',s);
+  }
+  return s;
+}
+function farmerName(sid,state){const st=(state||'IN').slice(0,2).toUpperCase();const n=Math.abs(hashCode(sid))%9000+1000;return`Kisan_${st}_${n}`;}
+function hashCode(s){let h=0;for(let i=0;i<s.length;i++){h=Math.imul(31,h)+s.charCodeAt(i)|0;}return h;}
+function timeAgo(ts){const d=(Date.now()-new Date(ts+'Z').getTime())/1000;if(d<60)return'just now';if(d<3600)return Math.floor(d/60)+'m ago';if(d<86400)return Math.floor(d/3600)+'h ago';return Math.floor(d/86400)+'d ago';}
+
+async function loadPosts(){
+  document.getElementById('posts-list').innerHTML='<div class="empty"><div class="spinner"></div>Loading…</div>';
+  try{
+    const sort=curSort==='nearme'?'recent':curSort;
+    let url=`${API}/forum/posts?sort=${sort}`;
+    if(curCrop)url+=`&crop=${encodeURIComponent(curCrop)}`;
+    if(curLang)url+=`&lang=${encodeURIComponent(curLang)}`;
+    if(curSort==='nearme'&&myState)url+=`&state=${encodeURIComponent(myState)}`;
+    const res=await fetch(url);const data=await res.json();
+    renderPosts(data.posts||[]);
+  }catch{document.getElementById('posts-list').innerHTML='<div class="empty">❌ Could not load posts. Make sure the backend is running.</div>';}
+}
+
+function renderPosts(posts){
+  if(!posts.length){document.getElementById('posts-list').innerHTML='<div class="empty">No posts yet. Be the first to ask a question!</div>';return;}
+  document.getElementById('posts-list').innerHTML=posts.map(p=>`
+    <div class="post-card" onclick="openPost(${p.id})">
+      <div class="pc-top">
+        <div class="pc-tags">
+          ${p.crop_tag?`<span class="crop-tag">${p.crop_tag}</span>`:''}
+          ${p.state_tag?`<span class="state-tag">${p.state_tag}</span>`:''}
+          ${p.is_expert_verified?`<span class="expert-badge">✓ Expert answered</span>`:''}
+          ${p.language&&p.language!=='English'?`<span class="lang-tag">${p.language}</span>`:''}
+        </div>
+      </div>
+      <div class="pc-title">${escHtml(p.title)}</div>
+      <div class="pc-meta">
+        <span>👤 ${farmerName(p.session_id,p.state_tag)}</span>
+        <span>💬 ${p.answer_count||0} answers</span>
+        <span>⬆️ ${p.upvotes||0}</span>
+        <span>🕐 ${timeAgo(p.created_at)}</span>
+        <div class="pc-upvote" onclick="event.stopPropagation();upvotePost(${p.id},this)">⬆ Upvote</div>
+      </div>
+    </div>`).join('');
+}
+
+async function openPost(id){
+  curPostId=id;
+  document.getElementById('feed-panel').classList.add('hidden');
+  document.getElementById('detail-panel').classList.add('open');
+  document.getElementById('detail-content').innerHTML='<div class="empty"><div class="spinner"></div>Loading…</div>';
+  try{
+    const res=await fetch(`${API}/forum/posts/${id}`);const data=await res.json();
+    renderDetail(data);
+  }catch{document.getElementById('detail-content').innerHTML='<div class="empty">❌ Could not load post.</div>';}
+}
+
+function renderDetail(data){
+  const p=data.post;const answers=data.answers||[];
+  let html=`
+    <div class="post-card" style="cursor:default;margin-bottom:16px">
+      <div class="pc-top"><div class="pc-tags">
+        ${p.crop_tag?`<span class="crop-tag">${p.crop_tag}</span>`:''}
+        ${p.state_tag?`<span class="state-tag">${p.state_tag}</span>`:''}
+      </div></div>
+      <div style="font-family:var(--fh);font-size:1.05rem;font-weight:700;margin-bottom:8px">${escHtml(p.title)}</div>
+      <div style="font-size:.85rem;line-height:1.6;color:rgba(240,253,242,.85);margin-bottom:10px">${escHtml(p.body)}</div>
+      ${p.image_path?`<img class="post-img" src="${API}/forum_uploads/${p.image_path}" alt="Post image" loading="lazy"/>`:''}
+      <div class="pc-meta"><span>👤 ${farmerName(p.session_id,p.state_tag)}</span><span>🕐 ${timeAgo(p.created_at)}</span><span>⬆️ ${p.upvotes||0}</span></div>
+    </div>
+    <div style="font-family:var(--fh);font-size:.85rem;font-weight:700;margin-bottom:10px;color:var(--tm)">${answers.length} Answer${answers.length!==1?'s':''}</div>`;
+  answers.forEach(a=>{
+    const isAI = a.is_ai_generated || (a.session_id === 'ai' || a.session_id === 'krishi_ai');
+    html+=`<div class="answer-card ${a.is_expert?'expert':''} ${isAI?'ai-ans':''}">
+      <div class="ans-meta">
+        ${isAI ? '<span class="kr-ai-badge">🤖 AI Generated</span>' : ''}
+        ${a.is_expert && !isAI ? '<span class="expert-badge">🎓 KVK Expert</span>' : ''}
+        <span>👤 ${isAI ? 'Krishi AI' : farmerName(a.session_id,'')}</span>
+        <span>🕐 ${timeAgo(a.created_at)}</span>
+        <span>⬆️ ${a.upvotes||0}</span>
+      </div>
+      <div class="ans-body">${escHtml(a.body)}</div>
+      ${isAI ? '<div style="font-size:.65rem;color:rgba(192,132,252,.45);margin-top:6px;font-family:var(--fm)">⚠️ AI-generated — verify with a certified agronomist before acting.</div>' : ''}
+      ${a.image_path?`<img class="post-img" src="${API}/forum_uploads/${a.image_path}" alt="Answer image" loading="lazy"/>`:''}
+      ${!isAI ? `<div class="ans-upvote" onclick="upvoteAnswer(${a.id},this)">⬆ Helpful (${a.upvotes||0})</div>` : ''}
+    </div>`;
+  });
+
+  // AI Answer button (if no AI answer yet and post has ≤1 answers)
+  const hasAI = answers.some(a => a.is_ai_generated || a.session_id === 'ai' || a.session_id === 'krishi_ai');
+  if (!hasAI && answers.length <= 2) {
+    html += `<div id="ai-ans-row" style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.15);border-radius:12px;margin-top:8px">
+      <span style="font-size:1.2rem">🤖</span>
+      <div style="flex:1">
+        <div style="font-family:var(--fh);font-size:.84rem;font-weight:700;color:#c084fc">Get AI Answer</div>
+        <div style="font-size:.72rem;color:rgba(192,132,252,.5);margin-top:2px">No answers yet — let Krishi AI suggest a response</div>
+      </div>
+      <button id="ai-ans-btn" onclick="generateAIAnswer(${p.id})" style="padding:8px 14px;background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.3);border-radius:8px;font-family:var(--fb);font-size:.78rem;color:#c084fc;cursor:pointer;white-space:nowrap">Generate Answer</button>
+    </div>`;
+  }
+
+  html+=`<button class="btn" style="width:100%;margin-top:12px" onclick="openAnsModal()">+ Add Your Answer</button>`;
+  document.getElementById('detail-content').innerHTML=html;
+}
+
+// AI Answer Generation
+async function generateAIAnswer(postId) {
+  const btn = document.getElementById('ai-ans-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Thinking…'; }
+  try {
+    const res = await fetch(`${API}/forum/posts/${postId}/ai-answer`, { method: 'POST' });
+    if (!res.ok) throw new Error('AI unavailable');
+    openPost(postId); // reload
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Try Again'; }
+    // Fallback: show a generic AI answer inline
+    const row = document.getElementById('ai-ans-row');
+    if (row) row.innerHTML = '<span style="font-size:.78rem;color:#f87171">❌ AI answer unavailable — backend not connected.</span>';
+  }
+}
+
+// Sub-community active crop filter
+function setCommunityTab(el, crop) {
+  document.querySelectorAll('.kr-community-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  curCrop = crop || '';
+  loadPosts();
+}
+
+function showFeed(){
+  document.getElementById('feed-panel').classList.remove('hidden');
+  document.getElementById('detail-panel').classList.remove('open');
+  curPostId=null;loadPosts();
+}
+
+// New post
+function openNewPost(){document.getElementById('new-post-modal').classList.add('open');}
+function closeNewPost(){document.getElementById('new-post-modal').classList.remove('open');document.getElementById('similar-box').style.display='none';}
+
+let similarTimer=null;
+async function checkSimilar(){
+  clearTimeout(similarTimer);
+  const title=document.getElementById('np-title').value.trim();
+  if(title.length<10){document.getElementById('similar-box').style.display='none';return;}
+  similarTimer=setTimeout(async()=>{
+    try{
+      const res=await fetch(`${API}/forum/similar?title=${encodeURIComponent(title)}`);
+      const data=await res.json();
+      if(data.posts&&data.posts.length){
+        document.getElementById('similar-box').style.display='block';
+        document.getElementById('similar-list').innerHTML=data.posts.map(p=>`<div class="similar-item" onclick="openPost(${p.id});closeNewPost()">→ ${escHtml(p.title)}</div>`).join('');
+      }else document.getElementById('similar-box').style.display='none';
+    }catch{}
+  },600);
+}
+
+async function submitPost(){
+  const title=document.getElementById('np-title').value.trim();
+  const body=document.getElementById('np-body').value.trim();
+  if(!title||!body){alert('Please fill in title and description.');return;}
+  const fd=new FormData();
+  fd.append('session_id',SESSION);fd.append('title',title);fd.append('body',body);
+  fd.append('language',document.getElementById('np-lang').value);
+  fd.append('crop_tag',document.getElementById('np-crop').value);
+  fd.append('state_tag',document.getElementById('np-state').value);
+  const imgFile=document.getElementById('np-img').files[0];
+  if(imgFile)fd.append('image',imgFile);
+  try{
+    const res=await fetch(`${API}/forum/posts`,{method:'POST',body:fd});
+    if(!res.ok){const e=await res.json();alert(e.detail||'Error posting.');return;}
+    closeNewPost();loadPosts();
+    document.getElementById('np-title').value='';document.getElementById('np-body').value='';
+    document.getElementById('np-img').value='';
+    document.getElementById('np-img-preview').style.display='none';
+    document.getElementById('np-img-placeholder').style.display='block';
+  }catch{alert('Could not post. Check backend connection.');}
+}
+
+// Answer
+function openAnsModal(){document.getElementById('ans-modal').classList.add('open');}
+function closeAnsModal(){document.getElementById('ans-modal').classList.remove('open');}
+async function submitAnswer(){
+  const body=document.getElementById('ans-body').value.trim();
+  if(!body){alert('Please write your answer.');return;}
+  if(!curPostId)return;
+  const fd=new FormData();fd.append('session_id',SESSION);fd.append('body',body);
+  const imgFile=document.getElementById('ans-img').files[0];
+  if(imgFile)fd.append('image',imgFile);
+  try{
+    const res=await fetch(`${API}/forum/posts/${curPostId}/answers`,{method:'POST',body:fd});
+    if(!res.ok){const e=await res.json();alert(e.detail||'Error.');return;}
+    closeAnsModal();
+    document.getElementById('ans-body').value='';
+    document.getElementById('ans-img').value='';
+    document.getElementById('ans-img-preview').style.display='none';
+    document.getElementById('ans-img-placeholder').style.display='block';
+    openPost(curPostId);
+  }catch{alert('Could not post answer.');}
+}
+
+// Upvotes
+async function upvotePost(id,el){
+  try{await fetch(`${API}/forum/posts/${id}/upvote?session_id=${SESSION}`,{method:'POST'});loadPosts();}catch{}
+}
+async function upvoteAnswer(id,el){
+  try{
+    const res=await fetch(`${API}/forum/answers/${id}/upvote?session_id=${SESSION}`,{method:'POST'});
+    const d=await res.json();
+    if(curPostId)openPost(curPostId);
+  }catch{}
+}
+
+function setSort(s,btn){curSort=s;document.querySelectorAll('.sort-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');loadPosts();}
+function setCrop(el){curCrop=el.dataset.crop;document.querySelectorAll('.fchip').forEach(b=>b.classList.remove('active'));el.classList.add('active');loadPosts();}
+function escHtml(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+
+function setLang(el){curLang=el.dataset.lang;document.querySelectorAll('#lang-filters .fchip').forEach(b=>b.classList.remove('active'));el.classList.add('active');loadPosts();}
+
+function previewImg(input,previewId,zoneId){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const preview=document.getElementById(previewId);
+    const placeholder=document.getElementById(zoneId.replace('-zone','-placeholder'));
+    const thumb=document.getElementById(previewId.replace('-preview','-thumb'));
+    if(thumb)thumb.src=e.target.result;
+    if(preview)preview.style.display='block';
+    if(placeholder)placeholder.style.display='none';
+  };
+  reader.readAsDataURL(file);
+}
+
+// Close modals on overlay click
+['new-post-modal','ans-modal'].forEach(id=>{document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});});
+
+loadPosts();
+</script>
+<script src="config.js"></script>
+<script src="nav.js"></script>
+</body></html>

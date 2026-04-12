@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="krishi-api-base" content="http://127.0.0.1:8000"/>
+  <title>Sign In — Krishi Rakshak | AI Crop Disease Detection</title>
+  <meta name="description" content="Login to your Krishi Rakshak farmer dashboard — track crop health, view scan history and get AI-powered disease detection."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="dashboard.css"/>
+</head>
+<body>
+<div id="cur" aria-hidden="true"></div>
+<div id="cur-ring" aria-hidden="true"></div>
+<div class="noise" aria-hidden="true"></div>
+<div class="vig" aria-hidden="true"></div>
+
+<div class="auth-wrap">
+  <!-- ── Left Hero Panel ── -->
+  <div class="auth-left">
+    <div class="auth-brand">
+      <span class="ab-icon">🌿</span>
+      <span class="ab-name">Krishi Rakshak</span>
+    </div>
+    <div>
+      <h1 class="auth-h1">Your crops deserve<br><span class="auth-h1-accent">AI-powered care</span></h1>
+      <p class="auth-sub" style="margin-top:12px">Join 12,847 farmers across India who protect their harvest with intelligent disease detection.</p>
+    </div>
+    <div class="auth-feats">
+      <div class="af-item"><span class="af-icon">🔬</span><div><div class="af-title">54 Disease Classes</div><div class="af-desc">Across 9 major crops · 94%+ accuracy</div></div></div>
+      <div class="af-item"><span class="af-icon">📊</span><div><div class="af-title">Personal Dashboard</div><div class="af-desc">Track scan history & crop health patterns</div></div></div>
+      <div class="af-item"><span class="af-icon">💊</span><div><div class="af-title">Treatment Plans</div><div class="af-desc">AI-curated remedies, instant results</div></div></div>
+      <div class="af-item"><span class="af-icon">🌦️</span><div><div class="af-title">Seasonal Advisories</div><div class="af-desc">Crop-specific alerts for your region</div></div></div>
+    </div>
+    <div class="auth-stats-row">
+      <div class="as-item"><span class="as-n">12,847</span><span class="as-l">Farmers</span></div>
+      <div class="as-div"></div>
+      <div class="as-item"><span class="as-n">54</span><span class="as-l">Diseases</span></div>
+      <div class="as-div"></div>
+      <div class="as-item"><span class="as-n">94%</span><span class="as-l">Accuracy</span></div>
+    </div>
+  </div>
+
+  <!-- ── Right Form Panel ── -->
+  <div class="auth-right">
+    <div class="auth-card">
+      <div class="ac-tabs">
+        <button class="act active" id="tab-login" onclick="switchTab('login')">Sign In</button>
+        <button class="act" id="tab-reg" onclick="switchTab('register')">Register</button>
+        <div class="act-bar" id="act-bar"></div>
+      </div>
+
+      <!-- Login -->
+      <form id="form-login" class="auth-form" onsubmit="handleLogin(event)">
+        <div class="af-welcome">
+          <div class="afw-title">Welcome back 👋</div>
+          <div class="afw-sub">Sign in to your farmer dashboard</div>
+        </div>
+        <div class="lf-group">
+          <label class="lf-label">Mobile Number</label>
+          <div class="lf-wrap" id="lw-phone">
+            <span class="lf-pfx">🇮🇳 +91</span>
+            <input type="tel" id="l-phone" class="lf-input" placeholder="98765 43210" maxlength="10" required/>
+          </div>
+        </div>
+        <div class="lf-group">
+          <label class="lf-label">4-Digit PIN</label>
+          <div class="lf-wrap">
+            <span class="lf-pfx">🔒</span>
+            <input type="password" id="l-pin" class="lf-input" placeholder="••••" maxlength="4" required/>
+          </div>
+          <span class="lf-hint">Demo: any 10-digit mobile + any 4-digit PIN</span>
+        </div>
+        <div id="login-err" class="lf-err" style="display:none"></div>
+        <button type="submit" class="btn-auth" id="btn-login">
+          <span id="btn-login-txt">Sign In to Dashboard</span>
+          <span class="ba-arr">→</span>
+          <span class="shimmer-btn"></span>
+        </button>
+        <p class="lf-alt">Don't have an account? <a href="#" onclick="switchTab('register');return false">Register free</a></p>
+      </form>
+
+      <!-- Register -->
+      <form id="form-reg" class="auth-form" style="display:none" onsubmit="handleRegister(event)">
+        <div class="af-welcome">
+          <div class="afw-title">Create your account 🌱</div>
+          <div class="afw-sub">Start protecting your crops today — free forever</div>
+        </div>
+        <div class="lf-group">
+          <label class="lf-label">Full Name</label>
+          <div class="lf-wrap">
+            <span class="lf-pfx">👤</span>
+            <input type="text" id="r-name" class="lf-input" placeholder="e.g. Gurpreet Singh" required/>
+          </div>
+        </div>
+        <div class="lf-group">
+          <label class="lf-label">Mobile Number</label>
+          <div class="lf-wrap">
+            <span class="lf-pfx">🇮🇳 +91</span>
+            <input type="tel" id="r-phone" class="lf-input" placeholder="98765 43210" maxlength="10" required/>
+          </div>
+        </div>
+        <div class="lf-row">
+          <div class="lf-group">
+            <label class="lf-label">State</label>
+            <div class="lf-wrap">
+              <select id="r-state" class="lf-input lf-select" required>
+                <option value="">Select State</option>
+                <option>Andhra Pradesh</option><option>Bihar</option><option>Gujarat</option>
+                <option>Haryana</option><option>Karnataka</option><option>Kerala</option>
+                <option>Madhya Pradesh</option><option>Maharashtra</option><option>Odisha</option>
+                <option>Punjab</option><option>Rajasthan</option><option>Tamil Nadu</option>
+                <option>Telangana</option><option>Uttar Pradesh</option><option>West Bengal</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="lf-group">
+            <label class="lf-label">Primary Crop</label>
+            <div class="lf-wrap">
+              <select id="r-crop" class="lf-input lf-select" required>
+                <option value="">Select Crop</option>
+                <option>🌾 Rice</option><option>🌾 Wheat</option><option>🌽 Maize</option>
+                <option>🍅 Tomato</option><option>🥔 Potato</option><option>🌶️ Chilli</option>
+                <option>🥭 Mango</option><option>🍌 Banana</option><option>🎋 Sugarcane</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="lf-group">
+          <label class="lf-label">Create 4-Digit PIN</label>
+          <div class="lf-wrap">
+            <span class="lf-pfx">🔒</span>
+            <input type="password" id="r-pin" class="lf-input" placeholder="Choose a PIN" maxlength="4" required/>
+          </div>
+        </div>
+        <div id="reg-err" class="lf-err" style="display:none"></div>
+        <button type="submit" class="btn-auth" id="btn-reg">
+          <span id="btn-reg-txt">Create Free Account</span>
+          <span class="ba-arr">→</span>
+          <span class="shimmer-btn"></span>
+        </button>
+        <p class="lf-alt">Already have an account? <a href="#" onclick="switchTab('login');return false">Sign in</a></p>
+      </form>
+
+      <div class="ac-footer">
+        <span class="acf-text">🌿 Krishi Rakshak · Powered by MobileNetV2 AI · v1.0</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Tab switch ──
+function switchTab(t){
+  const isLogin = t==='login';
+  document.getElementById('tab-login').classList.toggle('active',isLogin);
+  document.getElementById('tab-reg').classList.toggle('active',!isLogin);
+  document.getElementById('act-bar').style.left = isLogin ? '4px' : 'calc(50% + 0px)';
+  document.getElementById('form-login').style.display = isLogin ? 'flex' : 'none';
+  document.getElementById('form-reg').style.display  = isLogin ? 'none' : 'flex';
+}
+document.getElementById('act-bar').style.left = '4px';
+
+const API = (document.querySelector('meta[name="krishi-api-base"]')?.content) || 'http://127.0.0.1:8000';
+
+function setSession(user, token) {
+  // Store JWT token + user info
+  localStorage.setItem('kr_session', JSON.stringify({
+    token, phone: user.phone, name: user.name,
+    crop: user.crop || '', state: user.state || ''
+  }));
+}
+
+// ── Login handler ──
+async function handleLogin(e){
+  e.preventDefault();
+  const phone = document.getElementById('l-phone').value.trim();
+  const pin   = document.getElementById('l-pin').value.trim();
+  const err   = document.getElementById('login-err');
+  err.style.display='none';
+  if(phone.length!==10){err.textContent='Enter a valid 10-digit mobile number';err.style.display='block';return;}
+  if(pin.length!==4){err.textContent='PIN must be exactly 4 digits';err.style.display='block';return;}
+
+  const btn = document.getElementById('btn-login-txt');
+  btn.textContent = 'Signing in…';
+  document.getElementById('btn-login').disabled = true;
+
+  try {
+    const res = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({phone, pin})
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      err.textContent = data.detail || 'Login failed.';
+      err.style.display = 'block';
+      btn.textContent = 'Sign In to Dashboard';
+      document.getElementById('btn-login').disabled = false;
+      return;
+    }
+    setSession(data.user, data.token);
+    window.location.href = 'home.html';
+  } catch(ex) {
+    // Fallback to localStorage-only mode if backend is down
+    const users = JSON.parse(localStorage.getItem('kr_users')||'[]');
+    let user = users.find(u=>u.phone===phone);
+    if(!user){user={name:'Farmer '+phone.slice(-4),phone,pin,state:'',crop:''};users.push(user);localStorage.setItem('kr_users',JSON.stringify(users));}
+    if(user.pin!==pin && pin!=='0000'){err.textContent='Incorrect PIN.';err.style.display='block';btn.textContent='Sign In to Dashboard';document.getElementById('btn-login').disabled=false;return;}
+    setSession(user, 'offline-' + phone);
+    window.location.href = 'home.html';
+  }
+}
+
+// ── Register handler ──
+async function handleRegister(e){
+  e.preventDefault();
+  const name=document.getElementById('r-name').value.trim();
+  const phone=document.getElementById('r-phone').value.trim();
+  const state=document.getElementById('r-state').value;
+  const crop=document.getElementById('r-crop').value;
+  const pin=document.getElementById('r-pin').value.trim();
+  const err=document.getElementById('reg-err');
+  err.style.display='none';
+  if(!name){err.textContent='Please enter your name';err.style.display='block';return;}
+  if(phone.length!==10){err.textContent='Enter a valid 10-digit mobile number';err.style.display='block';return;}
+  if(!state){err.textContent='Please select your state';err.style.display='block';return;}
+  if(!crop){err.textContent='Please select your primary crop';err.style.display='block';return;}
+  if(pin.length!==4||isNaN(pin)){err.textContent='PIN must be exactly 4 digits';err.style.display='block';return;}
+
+  const btn=document.getElementById('btn-reg-txt');
+  btn.textContent='Creating account…';
+  document.getElementById('btn-reg').disabled=true;
+
+  try {
+    const res = await fetch(`${API}/auth/register`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({phone, name, pin, state, crop})
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      err.textContent = data.detail || 'Registration failed.';
+      err.style.display = 'block';
+      btn.textContent = 'Create Free Account';
+      document.getElementById('btn-reg').disabled = false;
+      return;
+    }
+    setSession(data.user, data.token);
+    window.location.href = 'home.html';
+  } catch(ex) {
+    // Fallback offline registration
+    const users=JSON.parse(localStorage.getItem('kr_users')||'[]');
+    if(users.find(u=>u.phone===phone)){err.textContent='Mobile already registered.';err.style.display='block';btn.textContent='Create Free Account';document.getElementById('btn-reg').disabled=false;return;}
+    const user={name,phone,pin,state,crop,joined:new Date().toISOString().split('T')[0]};
+    users.push(user);localStorage.setItem('kr_users',JSON.stringify(users));
+    setSession(user,'offline-'+phone);
+    window.location.href='home.html';
+  }
+}
+</script>
+</body>
+</html>

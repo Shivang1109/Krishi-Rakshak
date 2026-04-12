@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="krishi-api-base" content="http://127.0.0.1:8000"/>
+  <title>Weather — Krishi Rakshak</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="dashboard.css"/>
+  <style>
+    :root{--green:#22c55e;--lime:#a8ff3e;--bg:#070f09;--card:rgba(255,255,255,.04);--border:rgba(255,255,255,.08);}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:#f0fdf2;font-family:'DM Sans',sans-serif;min-height:100vh;}
+    @keyframes skeleton-shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+    .skeleton{background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(74,222,128,.08) 50%,rgba(255,255,255,.04) 75%);background-size:800px 100%;animation:skeleton-shimmer 1.4s infinite linear;border-radius:8px;}
+    .skeleton-row{display:flex;gap:12px;margin-bottom:12px;overflow:hidden;}
+    .noise{position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:0;}
+    /* NAV */
+    .w-nav{position:sticky;top:0;z-index:100;background:rgba(7,15,9,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px;}
+    .w-nav-inner{max-width:1200px;margin:0 auto;height:60px;display:flex;align-items:center;gap:20px;}
+    .w-logo{display:flex;align-items:center;gap:8px;text-decoration:none;color:#f0fdf2;font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;}
+    .w-nav-links{display:flex;gap:4px;margin-left:auto;}
+    .w-nav-links a{color:rgba(240,253,242,.6);text-decoration:none;font-size:.82rem;padding:6px 12px;border-radius:8px;transition:all .2s;}
+    .w-nav-links a:hover,.w-nav-links a.active{color:#f0fdf2;background:rgba(255,255,255,.06);}
+    /* MAIN */
+    .w-main{max-width:1100px;margin:0 auto;padding:32px 20px 80px;}
+    .w-title{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;margin-bottom:4px;}
+    .w-sub{color:rgba(240,253,242,.5);font-size:.85rem;margin-bottom:28px;}
+    /* LOCATION BAR */
+    .loc-bar{display:flex;gap:10px;margin-bottom:28px;flex-wrap:wrap;}
+    .loc-input{flex:1;min-width:200px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 16px;color:#f0fdf2;font-family:'DM Sans',sans-serif;font-size:.88rem;outline:none;}
+    .loc-input:focus{border-color:rgba(34,197,94,.4);}
+    .loc-btn{padding:10px 20px;background:var(--green);border:none;border-radius:12px;color:#070f09;font-weight:700;font-size:.85rem;cursor:pointer;white-space:nowrap;transition:opacity .2s;}
+    .loc-btn:hover{opacity:.85;}
+    .loc-btn.ghost{background:var(--card);border:1px solid var(--border);color:#f0fdf2;}
+    /* CURRENT CARD */
+    .current-card{background:linear-gradient(135deg,rgba(34,197,94,.12),rgba(20,184,166,.06));border:1px solid rgba(34,197,94,.2);border-radius:20px;padding:28px;margin-bottom:24px;position:relative;overflow:hidden;}
+    .current-card::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(34,197,94,.15),transparent 70%);pointer-events:none;}
+    .cc-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+    .cc-temp{font-family:'Syne',sans-serif;font-size:4rem;font-weight:800;line-height:1;color:#f0fdf2;}
+    .cc-temp span{font-size:1.8rem;color:rgba(240,253,242,.5);}
+    .cc-desc{color:rgba(240,253,242,.7);font-size:.95rem;margin-top:4px;}
+    .cc-icon{width:80px;height:80px;}
+    .cc-stats{display:flex;gap:20px;margin-top:20px;flex-wrap:wrap;}
+    .cc-stat{display:flex;flex-direction:column;gap:2px;}
+    .cc-stat-label{font-size:.72rem;color:rgba(240,253,242,.4);text-transform:uppercase;letter-spacing:.05em;}
+    .cc-stat-val{font-size:1rem;font-weight:600;color:#f0fdf2;}
+    .rain-bar-wrap{margin-top:16px;}
+    .rain-bar-label{font-size:.75rem;color:rgba(240,253,242,.5);margin-bottom:6px;}
+    .rain-bar{height:6px;background:rgba(255,255,255,.08);border-radius:6px;overflow:hidden;}
+    .rain-bar-fill{height:100%;background:linear-gradient(90deg,#22c55e,#14b8a6);border-radius:6px;transition:width .8s ease;}
+    .spray-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:10px;font-size:.82rem;font-weight:600;margin-top:16px;}
+    .spray-badge.good{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:#4ade80;}
+    .spray-badge.bad{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);color:#f87171;}
+    /* FORECAST */
+    .section-label{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:14px;color:rgba(240,253,242,.8);}
+    .forecast-strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;scrollbar-width:thin;scrollbar-color:rgba(34,197,94,.3) transparent;}
+    .forecast-strip::-webkit-scrollbar{height:4px;}
+    .forecast-strip::-webkit-scrollbar-thumb{background:rgba(34,197,94,.3);border-radius:4px;}
+    .fc-day{min-width:110px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 12px;text-align:center;flex-shrink:0;transition:border-color .2s;}
+    .fc-day:hover{border-color:rgba(34,197,94,.3);}
+    .fc-day-name{font-size:.72rem;color:rgba(240,253,242,.5);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+    .fc-day-icon{width:36px;height:36px;margin:0 auto 8px;}
+    .fc-day-temps{font-size:.88rem;font-weight:600;}
+    .fc-day-temps .hi{color:#f0fdf2;}
+    .fc-day-temps .lo{color:rgba(240,253,242,.4);font-size:.78rem;}
+    .fc-day-rain{font-size:.72rem;color:#60a5fa;margin-top:4px;}
+    /* ALERTS */
+    .alerts-panel{display:flex;flex-direction:column;gap:10px;margin-bottom:28px;}
+    .alert-card{display:flex;align-items:flex-start;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;}
+    .alert-card.irrigation{border-color:rgba(96,165,250,.25);background:rgba(96,165,250,.06);}
+    .alert-card.frost{border-color:rgba(147,197,253,.25);background:rgba(147,197,253,.06);}
+    .alert-card.fungal{border-color:rgba(251,191,36,.25);background:rgba(251,191,36,.06);}
+    .alert-card.spray{border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.06);}
+    .alert-icon{font-size:1.4rem;flex-shrink:0;margin-top:2px;}
+    .alert-msg{font-size:.85rem;color:rgba(240,253,242,.85);line-height:1.5;}
+    /* LOADING */
+    .w-loading{text-align:center;padding:60px 20px;color:rgba(240,253,242,.4);}
+    .w-spinner{width:40px;height:40px;border:3px solid rgba(34,197,94,.2);border-top-color:#22c55e;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .w-error{text-align:center;padding:40px 20px;color:rgba(240,253,242,.5);}
+    /* GRID */
+    .w-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;}
+    @media(max-width:640px){.w-grid{grid-template-columns:1fr;}.cc-temp{font-size:3rem;}}
+    .w-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;}
+    .w-card-title{font-size:.78rem;color:rgba(240,253,242,.4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="nav.css"/>
+</head>
+<body data-page="weather">
+<div class="noise" aria-hidden="true"></div>
+
+<!-- NAV -->
+<main class="w-main">
+  <h1 class="w-title">🌦️ Hyper-Local Weather</h1>
+  <p class="w-sub">Real-time conditions and 7-day forecast with crop-specific farming advice</p>
+
+  <!-- Location Bar -->
+  <div class="loc-bar">
+    <input type="text" class="loc-input" id="loc-input" placeholder="Enter village, district or city (e.g. Nashik, Maharashtra)"/>
+    <button class="loc-btn ghost" id="btn-geo">📍 Use My Location</button>
+    <button class="loc-btn" id="btn-search">Search</button>
+  </div>
+
+  <!-- Content -->
+  <div id="w-content">
+    <div class="w-loading" id="w-loading" style="display:none">
+      <div class="w-spinner"></div>
+      <p>Fetching weather data…</p>
+    </div>
+    <div class="w-error" id="w-error" style="display:none">
+      <p>⚠️ Could not load weather. Check your connection and try again.</p>
+    </div>
+    <div id="w-data" style="display:none">
+      <!-- Current Conditions -->
+      <div class="current-card" id="current-card"></div>
+
+      <!-- Farmer Alerts -->
+      <div id="alerts-section" style="display:none;margin-bottom:28px;">
+        <p class="section-label">🚨 Farmer Alerts</p>
+        <div class="alerts-panel" id="alerts-panel"></div>
+      </div>
+
+      <!-- 7-Day Forecast -->
+      <p class="section-label">📅 7-Day Forecast</p>
+      <div class="forecast-strip" id="forecast-strip"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+const API = window.KRISHI_API_BASE || 'http://127.0.0.1:8000';
+
+// SVG weather icons
+const ICONS = {
+  sunny: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="10" fill="#fbbf24"/><g stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"><line x1="24" y1="4" x2="24" y2="10"/><line x1="24" y1="38" x2="24" y2="44"/><line x1="4" y1="24" x2="10" y2="24"/><line x1="38" y1="24" x2="44" y2="24"/><line x1="9.4" y1="9.4" x2="13.8" y2="13.8"/><line x1="34.2" y1="34.2" x2="38.6" y2="38.6"/><line x1="38.6" y1="9.4" x2="34.2" y2="13.8"/><line x1="13.8" y1="34.2" x2="9.4" y2="38.6"/></g></svg>`,
+  partly_cloudy: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="18" cy="20" r="8" fill="#fbbf24"/><path d="M14 30a10 10 0 0 1 20 0h2a6 6 0 0 1 0 12H12a8 8 0 0 1 0-16h2z" fill="#94a3b8"/></svg>`,
+  cloudy: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 28a12 12 0 0 1 24 0h2a7 7 0 0 1 0 14H8a9 9 0 0 1 0-18h2z" fill="#94a3b8"/></svg>`,
+  rainy: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 22a12 12 0 0 1 24 0h2a7 7 0 0 1 0 14H6a9 9 0 0 1 0-18h2z" fill="#64748b"/><g stroke="#60a5fa" stroke-width="2.5" stroke-linecap="round"><line x1="16" y1="40" x2="14" y2="46"/><line x1="24" y1="40" x2="22" y2="46"/><line x1="32" y1="40" x2="30" y2="46"/></g></svg>`,
+  heavy_rain: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 20a12 12 0 0 1 24 0h2a7 7 0 0 1 0 14H6a9 9 0 0 1 0-18h2z" fill="#475569"/><g stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="38" x2="10" y2="46"/><line x1="20" y1="38" x2="18" y2="46"/><line x1="28" y1="38" x2="26" y2="46"/><line x1="36" y1="38" x2="34" y2="46"/></g></svg>`,
+  thunderstorm: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 20a12 12 0 0 1 24 0h2a7 7 0 0 1 0 14H4a9 9 0 0 1 0-18h2z" fill="#374151"/><path d="M26 28l-6 10h5l-4 8 10-12h-6l5-6z" fill="#fbbf24"/></svg>`,
+  foggy: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><g stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="20" x2="40" y2="20"/><line x1="8" y1="28" x2="40" y2="28"/><line x1="12" y1="36" x2="36" y2="36"/></g></svg>`,
+  snowy: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 20a12 12 0 0 1 24 0h2a7 7 0 0 1 0 14H6a9 9 0 0 1 0-18h2z" fill="#94a3b8"/><g fill="#bfdbfe"><circle cx="16" cy="42" r="2"/><circle cx="24" cy="44" r="2"/><circle cx="32" cy="42" r="2"/></g></svg>`,
+};
+
+function getIcon(name, size=48) {
+  const svg = ICONS[name] || ICONS.cloudy;
+  return svg.replace('viewBox', `width="${size}" height="${size}" viewBox`);
+}
+
+function dayName(dateStr, i) {
+  if (i === 0) return 'Today';
+  if (i === 1) return 'Tomorrow';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-IN', { weekday: 'short' });
+}
+
+let currentLat = null, currentLng = null;
+
+function showLoading(v) {
+  document.getElementById('w-loading').style.display = v ? 'block' : 'none';
+  document.getElementById('w-error').style.display = 'none';
+  document.getElementById('w-data').style.display = v ? 'none' : 'block';
+  if (v) {
+    document.getElementById('w-loading').innerHTML = `
+      <div style="padding:8px">
+        <div class="skeleton" style="height:160px;border-radius:20px;margin-bottom:20px"></div>
+        <div class="skeleton-row">
+          <div class="skeleton" style="height:80px;border-radius:14px;flex:1"></div>
+          <div class="skeleton" style="height:80px;border-radius:14px;flex:1"></div>
+          <div class="skeleton" style="height:80px;border-radius:14px;flex:1"></div>
+        </div>
+        <div class="skeleton" style="height:14px;width:40%;margin:20px 0 12px;border-radius:8px"></div>
+        <div class="skeleton-row">
+          ${Array(7).fill('<div class="skeleton" style="height:110px;border-radius:14px;flex:1;min-width:80px"></div>').join('')}
+        </div>
+      </div>`;
+  }
+}
+
+function showError() {
+  document.getElementById('w-loading').style.display = 'none';
+  document.getElementById('w-error').style.display = 'block';
+  document.getElementById('w-data').style.display = 'none';
+}
+
+async function loadWeather(lat, lng) {
+  currentLat = lat; currentLng = lng;
+  showLoading(true);
+  const session = (() => { try { const u = JSON.parse(localStorage.getItem('kr_session')); return u?.phone || null; } catch { return null; } })();
+  const crop = (() => { try { const u = JSON.parse(localStorage.getItem('kr_session')); return u?.crop || null; } catch { return null; } })();
+  let url = `${API}/weather?lat=${lat}&lng=${lng}`;
+  if (crop) url += `&crop=${encodeURIComponent(crop)}`;
+  if (session) url += `&session_id=${encodeURIComponent(session)}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    renderWeather(data);
+    showLoading(false);
+  } catch (e) {
+    showError();
+  }
+}
+
+function renderWeather(data) {
+  const c = data.current;
+  const ctx = data.crop_context;
+
+  // Current card
+  document.getElementById('current-card').innerHTML = `
+    <div class="cc-top">
+      <div>
+        <div class="cc-temp">${Math.round(c.temperature ?? 0)}<span>°C</span></div>
+        <div class="cc-desc">${c.description}</div>
+      </div>
+      <div class="cc-icon">${getIcon(c.icon, 80)}</div>
+    </div>
+    <div class="cc-stats">
+      <div class="cc-stat"><span class="cc-stat-label">Humidity</span><span class="cc-stat-val">${c.humidity_pct ?? '--'}%</span></div>
+      <div class="cc-stat"><span class="cc-stat-label">Wind</span><span class="cc-stat-val">${c.wind_kmh ?? '--'} km/h</span></div>
+      <div class="cc-stat"><span class="cc-stat-label">Rain Prob.</span><span class="cc-stat-val">${c.rain_prob_pct ?? '--'}%</span></div>
+    </div>
+    <div class="rain-bar-wrap">
+      <div class="rain-bar-label">Rain probability</div>
+      <div class="rain-bar"><div class="rain-bar-fill" style="width:${c.rain_prob_pct ?? 0}%"></div></div>
+    </div>
+    <div class="spray-badge ${ctx.spray_suitable ? 'good' : 'bad'}">
+      ${ctx.spray_suitable ? '✅ Good to spray today' : '🚫 Avoid spraying — rain or high wind'}
+    </div>
+  `;
+
+  // Farmer alerts
+  const alerts = data.farmer_alerts || [];
+  const alertsSection = document.getElementById('alerts-section');
+  const alertsPanel = document.getElementById('alerts-panel');
+  if (alerts.length) {
+    alertsSection.style.display = 'block';
+    alertsPanel.innerHTML = alerts.map(a => `
+      <div class="alert-card ${a.type}">
+        <span class="alert-icon">${a.icon}</span>
+        <span class="alert-msg">${a.message}</span>
+      </div>
+    `).join('');
+  } else {
+    alertsSection.style.display = 'none';
+  }
+
+  // 7-day forecast
+  const strip = document.getElementById('forecast-strip');
+  strip.innerHTML = (data.forecast || []).map((d, i) => `
+    <div class="fc-day">
+      <div class="fc-day-name">${dayName(d.date, i)}</div>
+      <div class="fc-day-icon">${getIcon(d.icon, 36)}</div>
+      <div class="fc-day-temps">
+        <span class="hi">${Math.round(d.temp_max ?? 0)}°</span>
+        <span class="lo"> / ${Math.round(d.temp_min ?? 0)}°</span>
+      </div>
+      <div class="fc-day-rain">💧 ${d.precip_sum ?? 0}mm</div>
+    </div>
+  `).join('');
+}
+
+// Geolocation
+document.getElementById('btn-geo').addEventListener('click', () => {
+  if (!navigator.geolocation) { alert('Geolocation not supported.'); return; }
+  document.getElementById('btn-geo').textContent = '⏳ Locating…';
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      document.getElementById('btn-geo').textContent = '📍 Use My Location';
+      loadWeather(pos.coords.latitude, pos.coords.longitude);
+    },
+    () => {
+      document.getElementById('btn-geo').textContent = '📍 Use My Location';
+      alert('Could not get location. Please enter manually.');
+    }
+  );
+});
+
+// Nominatim geocoding
+document.getElementById('btn-search').addEventListener('click', async () => {
+  const q = document.getElementById('loc-input').value.trim();
+  if (!q) return;
+  document.getElementById('btn-search').textContent = '⏳';
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`, {
+      headers: { 'Accept-Language': 'en' }
+    });
+    const results = await res.json();
+    if (!results.length) { alert('Location not found. Try a different name.'); return; }
+    loadWeather(parseFloat(results[0].lat), parseFloat(results[0].lon));
+  } catch { alert('Geocoding failed. Check your connection.'); }
+  finally { document.getElementById('btn-search').textContent = 'Search'; }
+});
+
+document.getElementById('loc-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('btn-search').click();
+});
+
+// Auto-load on page open
+window.addEventListener('load', () => {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => loadWeather(pos.coords.latitude, pos.coords.longitude),
+      () => {} // silent fail — user can search manually
+    );
+  }
+});
+</script>
+<script src="config.js"></script>
+<script src="nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="krishi-api-base" content="http://127.0.0.1:8000"/>
+  <meta name="theme-color" content="#22c55e"/>
+  <title>Smart Scan — Krishi Rakshak</title>
+  <meta name="description" content="AI crop disease detection. Live camera scan, batch analysis, WhatsApp sharing. Supports 54 diseases."/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="nav.css"/>
+  <style>
+    .det-wrap { max-width: 1100px; margin: 0 auto; padding: 20px 20px 80px; position: relative; z-index: 3; }
+    .det-top { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 22px; }
+    .det-top label { font-family: var(--fm); font-size: .68rem; color: var(--text-m); }
+    .det-top select { padding: 8px 12px; background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 10px; color: var(--text-1); font-size: .8rem; }
+    .sync-badge { font-family: var(--fm); font-size: .65rem; padding: 5px 10px; border-radius: 8px; background: rgba(245,158,11,.12); color: #fbbf24; border: 1px solid rgba(245,158,11,.25); display: none; }
+    .sync-badge.show { display: inline-block; }
+    .det-tabs { display: flex; gap: 8px; margin-bottom: 22px; flex-wrap: wrap; }
+    .dt-tab { padding: 10px 22px; border-radius: 12px; font-family: var(--fh); font-size: .88rem; font-weight: 700; border: 1px solid var(--border); background: transparent; color: var(--text-m); cursor: pointer; transition: .2s; }
+    .dt-tab.active { background: linear-gradient(135deg, var(--green-dim), #0f766e); color: #fff; border-color: transparent; }
+    .det-panel { display: none; }
+    .det-panel.active { display: block; }
+    .dz-multi { min-height: 200px; border: 2px dashed var(--border); border-radius: 22px; padding: 24px; text-align: center; cursor: pointer; transition: .2s; }
+    .dz-multi:hover, .dz-multi.drag-over { border-color: var(--green); background: rgba(34,197,94,.04); }
+    .thumb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 16px; }
+    .thumb-item { position: relative; border-radius: 10px; overflow: hidden; aspect-ratio: 1; border: 1px solid var(--border); }
+    .thumb-item img { width: 100%; height: 100%; object-fit: cover; }
+    .thumb-item button { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border: none; border-radius: 50%; background: rgba(0,0,0,.65); color: #fff; font-size: 12px; cursor: pointer; }
+    .field-summary { background: var(--bg-card); border: 1px solid var(--border); border-radius: 18px; padding: 22px; margin-bottom: 22px; }
+    .fs-urg { display: inline-block; padding: 6px 14px; border-radius: 99px; font-family: var(--fm); font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px; }
+    .fs-urg.high { background: rgba(239,68,68,.15); color: #f87171; border: 1px solid rgba(239,68,68,.35); }
+    .fs-urg.medium { background: rgba(245,158,11,.12); color: #fbbf24; border: 1px solid rgba(245,158,11,.3); }
+    .fs-urg.low { background: rgba(34,197,94,.12); color: #86efac; border: 1px solid rgba(34,197,94,.25); }
+    .batch-list { display: flex; flex-direction: column; gap: 12px; max-height: 70vh; overflow-y: auto; }
+    .batch-row { display: grid; grid-template-columns: 100px 1fr; gap: 14px; align-items: start; background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; }
+    .batch-row img { width: 100%; border-radius: 10px; aspect-ratio: 1; object-fit: cover; }
+    .sev-pill { display: inline-block; padding: 4px 10px; border-radius: 8px; font-family: var(--fm); font-size: .62rem; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; }
+    .sev-pill.healthy { background: rgba(34,197,94,.15); color: #4ade80; }
+    .sev-pill.early { background: rgba(74,222,128,.12); color: #86efac; }
+    .sev-pill.moderate { background: rgba(245,158,11,.14); color: #fbbf24; }
+    .sev-pill.severe { background: rgba(239,68,68,.14); color: #f87171; }
+    .voice-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+    .voice-bar button { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: rgba(34,197,94,.08); color: var(--green-bright); font-family: var(--fb); font-size: .78rem; cursor: pointer; }
+    .voice-bar button:hover { border-color: var(--green); }
+    .rate-sel { padding: 6px 10px; border-radius: 8px; background: rgba(255,255,255,.04); border: 1px solid var(--border); color: var(--text-1); font-size: .75rem; }
+    .hl-speak { background: rgba(168,255,62,.18); border-radius: 4px; padding: 0 2px; }
+    #det-single-results .rr-panel { min-height: 60px; }
+    .prog-batch { height: 4px; background: rgba(34,197,94,.1); border-radius: 4px; overflow: hidden; margin: 12px 0; display: none; }
+    .prog-batch.show { display: block; }
+    .prog-batch-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--green), var(--lime)); transition: width .3s; }
+    /* Camera tab */
+    .camera-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+    @media(max-width:768px){ .camera-layout{ grid-template-columns:1fr; } }
+    .camera-controls { display: flex; flex-direction: column; gap: 14px; }
+    .cam-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; width: 100%; border-radius: 12px; font-family: var(--fh); font-size: .9rem; font-weight: 700; cursor: pointer; transition: all .2s; border: none; }
+    .cam-btn-start { background: linear-gradient(135deg, var(--green-dim), #0f766e); color: #fff; }
+    .cam-btn-capture { background: linear-gradient(135deg, #a8ff3e, #22c55e); color: #0a1a0e; }
+    .cam-btn-capture:disabled { opacity: .3; cursor: not-allowed; }
+    .cam-btn-stop { background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.3); color: #f87171; }
+    .camera-tips { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+    .camera-tips li { display: flex; align-items: center; gap: 9px; font-size: .84rem; color: var(--text-m); }
+    .tip-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); flex-shrink: 0; box-shadow: 0 0 6px var(--green); }
+    /* Treatment tracker link */
+    .tracker-link-card { display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: rgba(20,184,166,.07); border: 1px solid rgba(20,184,166,.2); border-radius: 14px; margin-top: 16px; text-decoration: none; transition: all .2s; }
+    .tracker-link-card:hover { background: rgba(20,184,166,.12); border-color: rgba(20,184,166,.35); transform: translateY(-2px); }
+    .tlc-icon { font-size: 1.8rem; }
+    .tlc-title { font-family: var(--fh); font-size: .95rem; font-weight: 700; color: var(--text-1); }
+    .tlc-sub { font-size: .78rem; color: rgba(240,253,242,.55); margin-top: 2px; }
+    .tlc-arrow { margin-left: auto; font-size: 1.2rem; color: rgba(20,184,166,.6); transition: transform .2s; }
+    .tracker-link-card:hover .tlc-arrow { transform: translateX(4px); }
+  </style>
+</head>
+<body data-page="detect">
+<div class="noise" aria-hidden="true"></div>
+<div class="vig" aria-hidden="true"></div>
+
+<div class="det-wrap">
+  <div class="section-head rev" style="margin-bottom:8px">
+    <span class="section-chip">// smart_scan_v3</span>
+    <h1 style="font-family:var(--fh);font-size:1.6rem">AI Crop Disease Detection</h1>
+  </div>
+
+  <div class="det-top">
+    <label>Voice language
+      <select id="voice-lang" title="Speech language">
+        <option value="hi-IN">Hindi (hi-IN)</option>
+        <option value="te-IN">Telugu (te-IN)</option>
+        <option value="ta-IN">Tamil (ta-IN)</option>
+        <option value="mr-IN">Marathi (mr-IN)</option>
+        <option value="bn-IN">Bengali (bn-IN)</option>
+        <option value="en-IN">English (en-IN)</option>
+      </select>
+    </label>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+      <input type="checkbox" id="voice-auto"/> Auto-read results
+    </label>
+    <span class="sync-badge" id="sync-badge">0 pending sync</span>
+  </div>
+
+  <div class="det-tabs">
+    <button type="button" class="dt-tab active" data-tab="single">📸 Upload Image</button>
+    <button type="button" class="dt-tab" data-tab="camera">🎥 Live Camera</button>
+    <button type="button" class="dt-tab" data-tab="batch">📦 Batch (up to 10)</button>
+  </div>
+
+  <!-- SINGLE UPLOAD -->
+  <div class="det-panel active" id="panel-single">
+    <div class="detect-grid rev">
+      <div class="drop-zone" id="dz-single">
+        <input type="file" id="in-single" accept="image/*" hidden/>
+        <svg class="dz-border-svg"><rect class="dz-march" id="dz-march-s" x="2" y="2" rx="22" ry="22" width="100%" height="100%"/></svg>
+        <div class="dz-inner" id="dz-inner-s">
+          <div class="dz-icon-wrap"><span class="dz-icon">🌿</span></div>
+          <p class="dz-title">Drop one leaf image</p>
+          <button type="button" class="btn-browse mag" id="btn-browse-s">Browse Files</button>
+        </div>
+        <div class="dz-preview-wrap" id="dz-prev-s" style="display:none">
+          <img id="img-prev-s" src="" alt="preview"/>
+          <div class="dz-overlay"><button type="button" class="btn-remove" id="btn-rm-s">X Remove</button></div>
+        </div>
+      </div>
+      <div class="detect-panel">
+        <button type="button" class="btn-analyze mag" id="btn-run-s" disabled>
+          Analyze Leaf
+          <span class="btn-shimmer"></span>
+        </button>
+        <div class="prog-wrap" id="prog-s" style="display:none">
+          <div class="prog-steps">
+            <span class="ps" id="ps1-s"><em></em>Processing</span>
+            <span class="ps" id="ps2-s"><em></em>AI Model</span>
+            <span class="ps" id="ps3-s"><em></em>Diagnosis</span>
+          </div>
+          <div class="prog-track"><div class="prog-fill" id="prog-fill-s"></div></div>
+        </div>
+        <a href="tracker.html" class="tracker-link-card">
+          <span class="tlc-icon">📋</span>
+          <div>
+            <div class="tlc-title">Before/After Tracker</div>
+            <div class="tlc-sub">Photograph the same leaf weekly — see visual progress after treatment</div>
+          </div>
+          <span class="tlc-arrow">&#8594;</span>
+        </a>
+      </div>
+    </div>
+    <section class="results-section" id="det-single-results" style="display:none;margin-top:32px">
+      <div class="res-inner">
+        <div class="res-left">
+          <div class="res-img-frame"><img id="res-img-s" src="" alt=""/></div>
+          <div id="res-alts-s"></div>
+        </div>
+        <div class="res-right">
+          <div class="rr-head">
+            <span class="rr-sev" id="rr-sev-s">&#8212;</span>
+            <div class="rr-ring-wrap">
+              <svg viewBox="0 0 110 110" class="rr-ring-svg">
+                <defs><linearGradient id="rgs" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#22c55e"/><stop offset="100%" stop-color="#14b8a6"/></linearGradient></defs>
+                <circle class="rr-bg" cx="55" cy="55" r="46"/>
+                <circle class="rr-fg" id="rr-fg-s" cx="55" cy="55" r="46" stroke="url(#rgs)" stroke-dasharray="289" stroke-dashoffset="289"/>
+              </svg>
+              <div class="rr-ring-txt"><span id="rr-pct-s" class="rr-pct">0%</span><span class="rr-lbl">confidence</span></div>
+            </div>
+          </div>
+          <h2 class="rr-name" id="rr-name-s">&#8212;</h2>
+          <p class="rr-desc" id="rr-desc-s"></p>
+          <p class="rr-desc" id="speak-text-s" style="font-size:.82rem;line-height:1.65"></p>
+          <div id="wa-share-wrap-s"></div>
+          <div class="voice-bar" id="voice-bar-s">
+            <button type="button" id="btn-play-s">🔊 Play</button>
+            <button type="button" id="btn-pause-s">&#9208; Pause</button>
+            <label>Speed <select class="rate-sel" id="rate-s"><option value="0.75">0.75x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option></select></label>
+            <button type="button" id="btn-tts-s" style="display:none">Download audio</button>
+          </div>
+          <audio id="audio-tts-s" controls style="display:none;width:100%;margin-top:8px"></audio>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- CAMERA VIEWFINDER -->
+  <div class="det-panel" id="panel-camera">
+    <div class="camera-layout">
+      <div>
+        <div class="kr-camera-wrap" id="cam-wrap">
+          <video class="kr-camera-video" id="cam-video" autoplay playsinline muted></video>
+          <canvas id="cam-canvas" style="display:none"></canvas>
+          <div class="kr-camera-frame" id="cam-frame" style="display:none">
+            <div class="kr-camera-corner tl"></div>
+            <div class="kr-camera-corner tr"></div>
+            <div class="kr-camera-corner bl"></div>
+            <div class="kr-camera-corner br"></div>
+            <div class="kr-camera-scanline"></div>
+          </div>
+          <div class="kr-camera-hint" id="cam-hint">📷 Start camera to begin live scanning</div>
+          <div id="cam-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px">
+            <span style="font-size:3rem">🎥</span>
+            <span style="font-family:var(--fm);font-size:.72rem;color:var(--text-m)">Camera off</span>
+          </div>
+        </div>
+      </div>
+      <div class="camera-controls">
+        <button type="button" class="cam-btn cam-btn-start" id="cam-start">&#9654; Start Camera</button>
+        <button type="button" class="cam-btn cam-btn-capture" id="cam-capture" disabled>📸 Capture &amp; Analyze</button>
+        <button type="button" class="cam-btn cam-btn-stop" id="cam-stop" style="display:none">&#9632; Stop Camera</button>
+        <div class="prog-wrap" id="prog-cam" style="display:none">
+          <div class="prog-steps">
+            <span class="ps" id="ps1-c"><em></em>Capturing</span>
+            <span class="ps" id="ps2-c"><em></em>AI Model</span>
+            <span class="ps" id="ps3-c"><em></em>Diagnosis</span>
+          </div>
+          <div class="prog-track"><div class="prog-fill" id="prog-fill-c"></div></div>
+        </div>
+        <ul class="camera-tips">
+          <li><span class="tip-dot"></span>Hold the leaf steady, 15–20 cm from camera</li>
+          <li><span class="tip-dot"></span>Use natural daylight for best accuracy</li>
+          <li><span class="tip-dot"></span>Center the affected area in the frame</li>
+          <li><span class="tip-dot"></span>Capture several angles for confidence</li>
+        </ul>
+        <a href="tracker.html" class="tracker-link-card">
+          <span class="tlc-icon">📋</span>
+          <div>
+            <div class="tlc-title">Before/After Tracker</div>
+            <div class="tlc-sub">Track visual progress after treatment, weekly</div>
+          </div>
+          <span class="tlc-arrow">&#8594;</span>
+        </a>
+      </div>
+    </div>
+    <section class="results-section" id="det-cam-results" style="display:none;margin-top:32px">
+      <div class="res-inner">
+        <div class="res-left">
+          <div class="res-img-frame"><img id="res-img-c" src="" alt=""/></div>
+          <div id="res-alts-c"></div>
+        </div>
+        <div class="res-right">
+          <div class="rr-head">
+            <span class="rr-sev" id="rr-sev-c">&#8212;</span>
+            <div class="rr-ring-wrap">
+              <svg viewBox="0 0 110 110" class="rr-ring-svg">
+                <circle class="rr-bg" cx="55" cy="55" r="46"/>
+                <circle class="rr-fg" id="rr-fg-c" cx="55" cy="55" r="46" stroke="url(#rgs)" stroke-dasharray="289" stroke-dashoffset="289"/>
+              </svg>
+              <div class="rr-ring-txt"><span id="rr-pct-c" class="rr-pct">0%</span><span class="rr-lbl">confidence</span></div>
+            </div>
+          </div>
+          <h2 class="rr-name" id="rr-name-c">&#8212;</h2>
+          <p class="rr-desc" id="rr-desc-c"></p>
+          <div id="wa-share-wrap-c"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- BATCH -->
+  <div class="det-panel" id="panel-batch">
+    <div class="dz-multi" id="dz-batch">
+      <input type="file" id="in-batch" accept="image/*" multiple hidden/>
+      <p style="font-family:var(--fh);margin-bottom:8px">Drop up to 10 leaf images</p>
+      <button type="button" class="btn-primary mag" id="btn-pick-batch">Choose Files</button>
+      <div class="thumb-grid" id="thumb-grid"></div>
+    </div>
+    <button type="button" class="btn-analyze mag" id="btn-run-batch" style="margin-top:16px" disabled>
+      Run Batch Analysis
+      <span class="btn-shimmer"></span>
+    </button>
+    <div class="prog-batch" id="prog-batch"><div class="prog-batch-fill" id="prog-batch-fill"></div></div>
+    <div id="batch-results" style="display:none;margin-top:24px">
+      <div class="field-summary" id="field-summary"></div>
+      <div class="batch-list" id="batch-list"></div>
+      <div id="batch-wa-wrap" style="margin-top:16px"></div>
+    </div>
+  </div>
+</div>
+
+<script src="detect.js"></script>
+<script>
+/* Camera Viewfinder */
+let camStream = null;
+const camVideo  = document.getElementById('cam-video');
+const camCanvas = document.getElementById('cam-canvas');
+const camFrame  = document.getElementById('cam-frame');
+const camHint   = document.getElementById('cam-hint');
+const camPlaceholder = document.getElementById('cam-placeholder');
+
+document.getElementById('cam-start').addEventListener('click', async () => {
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } },
+      audio: false
+    });
+    camVideo.srcObject = camStream;
+    camFrame.style.display = 'block';
+    camPlaceholder.style.display = 'none';
+    document.getElementById('cam-capture').disabled = false;
+    document.getElementById('cam-start').style.display = 'none';
+    document.getElementById('cam-stop').style.display = 'flex';
+    camHint.textContent = '🌿 Center the leaf in the frame, then capture';
+  } catch (err) {
+    let msg = '📷 Camera access denied.';
+    if (err.name === 'NotFoundError')  msg = '📷 No camera found on this device.';
+    if (err.name === 'NotAllowedError') msg = '📷 Camera permission denied. Please allow in browser settings.';
+    camHint.textContent = msg;
+    camHint.style.color = '#f87171';
+  }
+});
+
+document.getElementById('cam-stop').addEventListener('click', stopCam);
+
+function stopCam() {
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+  camVideo.srcObject = null;
+  camFrame.style.display = 'none';
+  camPlaceholder.style.display = 'flex';
+  document.getElementById('cam-capture').disabled = true;
+  document.getElementById('cam-start').style.display = 'flex';
+  document.getElementById('cam-stop').style.display = 'none';
+  camHint.textContent = '📷 Start camera to begin live scanning';
+  camHint.style.color = '';
+}
+
+document.getElementById('cam-capture').addEventListener('click', async () => {
+  if (!camStream) return;
+  const wrap = document.getElementById('cam-wrap');
+  wrap.style.filter = 'brightness(2)';
+  setTimeout(() => { wrap.style.filter = ''; }, 100);
+
+  const vw = camVideo.videoWidth, vh = camVideo.videoHeight;
+  camCanvas.width = vw; camCanvas.height = vh;
+  camCanvas.getContext('2d').drawImage(camVideo, 0, 0, vw, vh);
+
+  const progC = document.getElementById('prog-cam');
+  const fillC = document.getElementById('prog-fill-c');
+  progC.style.display = 'block';
+
+  function setPS(id, state) {
+    const el = document.getElementById(id);
+    el.classList.remove('active','done');
+    if (state) el.classList.add(state);
+  }
+
+  setPS('ps1-c','active'); fillC.style.width = '25%';
+
+  camCanvas.toBlob(async (blob) => {
+    const imgUrl = URL.createObjectURL(blob);
+    document.getElementById('res-img-c').src = imgUrl;
+    setPS('ps1-c','done'); setPS('ps2-c','active'); fillC.style.width = '55%';
+
+    const fd = new FormData();
+    fd.append('file', blob, 'capture.jpg');
+    if (typeof getSessionId === 'function') fd.append('session_id', getSessionId());
+    fd.append('save_history', 'true');
+
+    try {
+      const API = window.KRISHI_API_BASE || 'http://127.0.0.1:8000';
+      const res = await fetch(API + '/predict', { method: 'POST', body: fd });
+      setPS('ps2-c','done'); setPS('ps3-c','active'); fillC.style.width = '85%';
+      if (!res.ok) throw new Error('API error ' + res.status);
+      const data = await res.json();
+      fillC.style.width = '100%';
+      setTimeout(() => { progC.style.display = 'none'; fillC.style.width = '0%'; }, 600);
+      renderCameraResult(data);
+    } catch (err) {
+      progC.style.display = 'none';
+      camHint.textContent = 'Analysis failed: ' + err.message;
+    }
+  }, 'image/jpeg', 0.92);
+});
+
+function renderCameraResult(data) {
+  const top = data.top_prediction;
+  const sev = top.confidence_severity || top.graded_severity || 'moderate';
+  const colors = { healthy:'#22c55e', early:'#86efac', moderate:'#fbbf24', severe:'#ef4444' };
+  const c = colors[sev] || '#8b5cf6';
+  const sevEl = document.getElementById('rr-sev-c');
+  sevEl.textContent = sev.toUpperCase();
+  sevEl.style.cssText = 'background:'+c+'22;color:'+c+';border:1px solid '+c+'44;padding:6px 14px;border-radius:99px;font-family:var(--fm);font-size:.68rem';
+  const circ = 2 * Math.PI * 46;
+  document.getElementById('rr-fg-c').style.strokeDashoffset = circ * (1 - top.confidence);
+  document.getElementById('rr-pct-c').textContent = Math.round(top.confidence * 100) + '%';
+  document.getElementById('rr-name-c').textContent = top.display_name;
+  document.getElementById('rr-desc-c').textContent = top.description || '';
+
+  const treat = Array.isArray(top.treatment) ? top.treatment.slice(0,3).join('\n') : (top.treatment || '');
+  const waText = 'Krishi Rakshak Camera Diagnosis\n\nDisease: ' + top.display_name + '\nSeverity: ' + sev.toUpperCase() + '\nConfidence: ' + Math.round(top.confidence * 100) + '%\n\nTreatment:\n' + treat + '\n\nKrishi Rakshak AI';
+  document.getElementById('wa-share-wrap-c').innerHTML =
+    '<a href="https://wa.me/?text=' + encodeURIComponent(waText) + '" target="_blank" rel="noopener" class="kr-wa-btn" style="margin-top:14px">' +
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="#25d366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.847L0 24l6.335-1.523A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.913a9.89 9.89 0 01-5.032-1.375l-.361-.214-3.741.98.997-3.648-.235-.374A9.861 9.861 0 012.087 12C2.087 6.971 6.101 2.957 12 2.957S21.913 6.971 21.913 12 17.899 21.913 12 21.913z"/></svg>' +
+    'Share on WhatsApp</a>';
+
+  document.getElementById('det-cam-results').style.display = 'block';
+  document.getElementById('det-cam-results').scrollIntoView({ behavior:'smooth', block:'start' });
+  camHint.textContent = 'Diagnosis complete — capture again for another leaf';
+}
+
+document.querySelectorAll('.dt-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    if (t.dataset.tab !== 'camera' && camStream) stopCam();
+  });
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && camStream) stopCam();
+});
+</script>
+<script src="config.js"></script>
+<script src="nav.js"></script>
+</body>
+</html>

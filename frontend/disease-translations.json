@@ -1,0 +1,380 @@
+{
+"Banana Cordana Leaf Spot": {
+"hi": "Banana Cordana Leaf Spot",
+"te": "Banana Cordana Leaf Spot",
+"ta": "Banana Cordana Leaf Spot",
+"mr": "Banana Cordana Leaf Spot",
+"bn": "Banana Cordana Leaf Spot"
+},
+"Banana – Healthy": {
+"hi": "केला — स्वस्थ",
+"te": "Banana – Healthy",
+"ta": "Banana – Healthy",
+"mr": "Banana – Healthy",
+"bn": "Banana – Healthy"
+},
+"Banana Pestalotiopsis": {
+"hi": "Banana Pestalotiopsis",
+"te": "Banana Pestalotiopsis",
+"ta": "Banana Pestalotiopsis",
+"mr": "Banana Pestalotiopsis",
+"bn": "Banana Pestalotiopsis"
+},
+"Banana Sigatoka (Black Leaf Streak)": {
+"hi": "Banana Sigatoka (Black Leaf Streak)",
+"te": "Banana Sigatoka (Black Leaf Streak)",
+"ta": "Banana Sigatoka (Black Leaf Streak)",
+"mr": "Banana Sigatoka (Black Leaf Streak)",
+"bn": "Banana Sigatoka (Black Leaf Streak)"
+},
+"Chilli Whitefly Infestation": {
+"hi": "Chilli Whitefly Infestation",
+"te": "Chilli Whitefly Infestation",
+"ta": "Chilli Whitefly Infestation",
+"mr": "Chilli Whitefly Infestation",
+"bn": "Chilli Whitefly Infestation"
+},
+"Chilli Yellowing": {
+"hi": "Chilli Yellowing",
+"te": "Chilli Yellowing",
+"ta": "Chilli Yellowing",
+"mr": "Chilli Yellowing",
+"bn": "Chilli Yellowing"
+},
+"Chilli Anthracnose": {
+"hi": "Chilli Anthracnose",
+"te": "Chilli Anthracnose",
+"ta": "Chilli Anthracnose",
+"mr": "Chilli Anthracnose",
+"bn": "Chilli Anthracnose"
+},
+"Chilli Damping Off": {
+"hi": "Chilli Damping Off",
+"te": "Chilli Damping Off",
+"ta": "Chilli Damping Off",
+"mr": "Chilli Damping Off",
+"bn": "Chilli Damping Off"
+},
+"Chilli Leaf Curl Virus": {
+"hi": "Chilli Leaf Curl Virus",
+"te": "Chilli Leaf Curl Virus",
+"ta": "Chilli Leaf Curl Virus",
+"mr": "Chilli Leaf Curl Virus",
+"bn": "Chilli Leaf Curl Virus"
+},
+"Chilli Leaf Spot": {
+"hi": "Chilli Leaf Spot",
+"te": "Chilli Leaf Spot",
+"ta": "Chilli Leaf Spot",
+"mr": "Chilli Leaf Spot",
+"bn": "Chilli Leaf Spot"
+},
+"Chilli Veinal Mottle Virus": {
+"hi": "Chilli Veinal Mottle Virus",
+"te": "Chilli Veinal Mottle Virus",
+"ta": "Chilli Veinal Mottle Virus",
+"mr": "Chilli Veinal Mottle Virus",
+"bn": "Chilli Veinal Mottle Virus"
+},
+"Chilli – Healthy": {
+"hi": "Chilli – Healthy",
+"te": "Chilli – Healthy",
+"ta": "Chilli – Healthy",
+"mr": "Chilli – Healthy",
+"bn": "Chilli – Healthy"
+},
+"Maize Gray Leaf Spot": {
+"hi": "Maize Gray Leaf Spot",
+"te": "Maize Gray Leaf Spot",
+"ta": "Maize Gray Leaf Spot",
+"mr": "Maize Gray Leaf Spot",
+"bn": "Maize Gray Leaf Spot"
+},
+"Maize Common Rust": {
+"hi": "Maize Common Rust",
+"te": "Maize Common Rust",
+"ta": "Maize Common Rust",
+"mr": "Maize Common Rust",
+"bn": "Maize Common Rust"
+},
+"Maize Northern Leaf Blight": {
+"hi": "Maize Northern Leaf Blight",
+"te": "Maize Northern Leaf Blight",
+"ta": "Maize Northern Leaf Blight",
+"mr": "Maize Northern Leaf Blight",
+"bn": "Maize Northern Leaf Blight"
+},
+"Maize – Healthy": {
+"hi": "Maize – Healthy",
+"te": "Maize – Healthy",
+"ta": "Maize – Healthy",
+"mr": "Maize – Healthy",
+"bn": "Maize – Healthy"
+},
+"Mango Anthracnose": {
+"hi": "Mango Anthracnose",
+"te": "Mango Anthracnose",
+"ta": "Mango Anthracnose",
+"mr": "Mango Anthracnose",
+"bn": "Mango Anthracnose"
+},
+"Mango Bacterial Canker": {
+"hi": "Mango Bacterial Canker",
+"te": "Mango Bacterial Canker",
+"ta": "Mango Bacterial Canker",
+"mr": "Mango Bacterial Canker",
+"bn": "Mango Bacterial Canker"
+},
+"Mango Cutting Weevil": {
+"hi": "Mango Cutting Weevil",
+"te": "Mango Cutting Weevil",
+"ta": "Mango Cutting Weevil",
+"mr": "Mango Cutting Weevil",
+"bn": "Mango Cutting Weevil"
+},
+"Mango Die Back": {
+"hi": "Mango Die Back",
+"te": "Mango Die Back",
+"ta": "Mango Die Back",
+"mr": "Mango Die Back",
+"bn": "Mango Die Back"
+},
+"Mango Gall Midge": {
+"hi": "Mango Gall Midge",
+"te": "Mango Gall Midge",
+"ta": "Mango Gall Midge",
+"mr": "Mango Gall Midge",
+"bn": "Mango Gall Midge"
+},
+"Mango – Healthy": {
+"hi": "Mango – Healthy",
+"te": "Mango – Healthy",
+"ta": "Mango – Healthy",
+"mr": "Mango – Healthy",
+"bn": "Mango – Healthy"
+},
+"Mango Powdery Mildew": {
+"hi": "Mango Powdery Mildew",
+"te": "Mango Powdery Mildew",
+"ta": "Mango Powdery Mildew",
+"mr": "Mango Powdery Mildew",
+"bn": "Mango Powdery Mildew"
+},
+"Mango Sooty Mould": {
+"hi": "Mango Sooty Mould",
+"te": "Mango Sooty Mould",
+"ta": "Mango Sooty Mould",
+"mr": "Mango Sooty Mould",
+"bn": "Mango Sooty Mould"
+},
+"Paddy Dead Heart (Stem Borer)": {
+"hi": "Paddy Dead Heart (Stem Borer)",
+"te": "Paddy Dead Heart (Stem Borer)",
+"ta": "Paddy Dead Heart (Stem Borer)",
+"mr": "Paddy Dead Heart (Stem Borer)",
+"bn": "Paddy Dead Heart (Stem Borer)"
+},
+"Potato Early Blight": {
+"hi": "Potato Early Blight",
+"te": "Potato Early Blight",
+"ta": "Potato Early Blight",
+"mr": "Potato Early Blight",
+"bn": "Potato Early Blight"
+},
+"Potato Late Blight": {
+"hi": "Potato Late Blight",
+"te": "Potato Late Blight",
+"ta": "Potato Late Blight",
+"mr": "Potato Late Blight",
+"bn": "Potato Late Blight"
+},
+"Potato – Healthy": {
+"hi": "Potato – Healthy",
+"te": "Potato – Healthy",
+"ta": "Potato – Healthy",
+"mr": "Potato – Healthy",
+"bn": "Potato – Healthy"
+},
+"Sugarcane – Healthy": {
+"hi": "Sugarcane – Healthy",
+"te": "Sugarcane – Healthy",
+"ta": "Sugarcane – Healthy",
+"mr": "Sugarcane – Healthy",
+"bn": "Sugarcane – Healthy"
+},
+"Sugarcane Red Rot": {
+"hi": "Sugarcane Red Rot",
+"te": "Sugarcane Red Rot",
+"ta": "Sugarcane Red Rot",
+"mr": "Sugarcane Red Rot",
+"bn": "Sugarcane Red Rot"
+},
+"Sugarcane Woolly Aphid": {
+"hi": "Sugarcane Woolly Aphid",
+"te": "Sugarcane Woolly Aphid",
+"ta": "Sugarcane Woolly Aphid",
+"mr": "Sugarcane Woolly Aphid",
+"bn": "Sugarcane Woolly Aphid"
+},
+"Tomato Bacterial Spot": {
+"hi": "Tomato Bacterial Spot",
+"te": "Tomato Bacterial Spot",
+"ta": "Tomato Bacterial Spot",
+"mr": "Tomato Bacterial Spot",
+"bn": "Tomato Bacterial Spot"
+},
+"Tomato Early Blight": {
+"hi": "टमाटर अर्ली ब्लाइट",
+"te": "Tomato Early Blight",
+"ta": "Tomato Early Blight",
+"mr": "Tomato Early Blight",
+"bn": "Tomato Early Blight"
+},
+"Tomato Late Blight": {
+"hi": "टमाटर लेट ब्लाइट",
+"te": "Tomato Late Blight",
+"ta": "Tomato Late Blight",
+"mr": "Tomato Late Blight",
+"bn": "Tomato Late Blight"
+},
+"Tomato Leaf Mold": {
+"hi": "Tomato Leaf Mold",
+"te": "Tomato Leaf Mold",
+"ta": "Tomato Leaf Mold",
+"mr": "Tomato Leaf Mold",
+"bn": "Tomato Leaf Mold"
+},
+"Tomato Septoria Leaf Spot": {
+"hi": "Tomato Septoria Leaf Spot",
+"te": "Tomato Septoria Leaf Spot",
+"ta": "Tomato Septoria Leaf Spot",
+"mr": "Tomato Septoria Leaf Spot",
+"bn": "Tomato Septoria Leaf Spot"
+},
+"Tomato Spider Mites": {
+"hi": "Tomato Spider Mites",
+"te": "Tomato Spider Mites",
+"ta": "Tomato Spider Mites",
+"mr": "Tomato Spider Mites",
+"bn": "Tomato Spider Mites"
+},
+"Tomato Target Spot": {
+"hi": "Tomato Target Spot",
+"te": "Tomato Target Spot",
+"ta": "Tomato Target Spot",
+"mr": "Tomato Target Spot",
+"bn": "Tomato Target Spot"
+},
+"Tomato Yellow Leaf Curl Virus (TYLCV)": {
+"hi": "Tomato Yellow Leaf Curl Virus (TYLCV)",
+"te": "Tomato Yellow Leaf Curl Virus (TYLCV)",
+"ta": "Tomato Yellow Leaf Curl Virus (TYLCV)",
+"mr": "Tomato Yellow Leaf Curl Virus (TYLCV)",
+"bn": "Tomato Yellow Leaf Curl Virus (TYLCV)"
+},
+"Tomato Mosaic Virus (ToMV)": {
+"hi": "Tomato Mosaic Virus (ToMV)",
+"te": "Tomato Mosaic Virus (ToMV)",
+"ta": "Tomato Mosaic Virus (ToMV)",
+"mr": "Tomato Mosaic Virus (ToMV)",
+"bn": "Tomato Mosaic Virus (ToMV)"
+},
+"Tomato – Healthy": {
+"hi": "Tomato – Healthy",
+"te": "Tomato – Healthy",
+"ta": "Tomato – Healthy",
+"mr": "Tomato – Healthy",
+"bn": "Tomato – Healthy"
+},
+"Wheat Brown Rust (Leaf Rust)": {
+"hi": "भूरा रस्ट",
+"te": "Wheat Brown Rust (Leaf Rust)",
+"ta": "Wheat Brown Rust (Leaf Rust)",
+"mr": "Wheat Brown Rust (Leaf Rust)",
+"bn": "Wheat Brown Rust (Leaf Rust)"
+},
+"Wheat – Healthy": {
+"hi": "Wheat – Healthy",
+"te": "Wheat – Healthy",
+"ta": "Wheat – Healthy",
+"mr": "Wheat – Healthy",
+"bn": "Wheat – Healthy"
+},
+"Wheat Yellow Rust (Stripe Rust)": {
+"hi": "पीला रस्ट",
+"te": "Wheat Yellow Rust (Stripe Rust)",
+"ta": "Wheat Yellow Rust (Stripe Rust)",
+"mr": "Wheat Yellow Rust (Stripe Rust)",
+"bn": "Wheat Yellow Rust (Stripe Rust)"
+},
+"Paddy Bacterial Leaf Blight": {
+"hi": "Paddy Bacterial Leaf Blight",
+"te": "Paddy Bacterial Leaf Blight",
+"ta": "Paddy Bacterial Leaf Blight",
+"mr": "Paddy Bacterial Leaf Blight",
+"bn": "Paddy Bacterial Leaf Blight"
+},
+"Paddy Bacterial Leaf Streak": {
+"hi": "Paddy Bacterial Leaf Streak",
+"te": "Paddy Bacterial Leaf Streak",
+"ta": "Paddy Bacterial Leaf Streak",
+"mr": "Paddy Bacterial Leaf Streak",
+"bn": "Paddy Bacterial Leaf Streak"
+},
+"Paddy Bacterial Panicle Blight": {
+"hi": "Paddy Bacterial Panicle Blight",
+"te": "Paddy Bacterial Panicle Blight",
+"ta": "Paddy Bacterial Panicle Blight",
+"mr": "Paddy Bacterial Panicle Blight",
+"bn": "Paddy Bacterial Panicle Blight"
+},
+"Paddy Blast (Rice Blast)": {
+"hi": "धान का ब्लाइट",
+"te": "Paddy Blast (Rice Blast)",
+"ta": "Paddy Blast (Rice Blast)",
+"mr": "Paddy Blast (Rice Blast)",
+"bn": "Paddy Blast (Rice Blast)"
+},
+"Paddy Brown Spot": {
+"hi": "Paddy Brown Spot",
+"te": "Paddy Brown Spot",
+"ta": "Paddy Brown Spot",
+"mr": "Paddy Brown Spot",
+"bn": "Paddy Brown Spot"
+},
+"Paddy – Class (Unverified)": {
+"hi": "Paddy – Class (Unverified)",
+"te": "Paddy – Class (Unverified)",
+"ta": "Paddy – Class (Unverified)",
+"mr": "Paddy – Class (Unverified)",
+"bn": "Paddy – Class (Unverified)"
+},
+"Paddy Downy Mildew": {
+"hi": "Paddy Downy Mildew",
+"te": "Paddy Downy Mildew",
+"ta": "Paddy Downy Mildew",
+"mr": "Paddy Downy Mildew",
+"bn": "Paddy Downy Mildew"
+},
+"Paddy Hispa (Rice Hispa)": {
+"hi": "Paddy Hispa (Rice Hispa)",
+"te": "Paddy Hispa (Rice Hispa)",
+"ta": "Paddy Hispa (Rice Hispa)",
+"mr": "Paddy Hispa (Rice Hispa)",
+"bn": "Paddy Hispa (Rice Hispa)"
+},
+"Paddy – Healthy (Normal)": {
+"hi": "Paddy – Healthy (Normal)",
+"te": "Paddy – Healthy (Normal)",
+"ta": "Paddy – Healthy (Normal)",
+"mr": "Paddy – Healthy (Normal)",
+"bn": "Paddy – Healthy (Normal)"
+},
+"Paddy Tungro Disease": {
+"hi": "Paddy Tungro Disease",
+"te": "Paddy Tungro Disease",
+"ta": "Paddy Tungro Disease",
+"mr": "Paddy Tungro Disease",
+"bn": "Paddy Tungro Disease"
+}
+}

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="krishi-api-base" content="http://127.0.0.1:8000"/>
+  <title>Irrigation Scheduler — Krishi Rakshak</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="dashboard.css"/>
+  <style>
+    :root{--green:#22c55e;--lime:#a8ff3e;--bg:#070f09;--card:rgba(255,255,255,.04);--border:rgba(255,255,255,.08);}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:#f0fdf2;font-family:'DM Sans',sans-serif;min-height:100vh;}
+    .noise{position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:0;}
+    .w-nav{position:sticky;top:0;z-index:100;background:rgba(7,15,9,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px;}
+    .w-nav-inner{max-width:1200px;margin:0 auto;height:60px;display:flex;align-items:center;gap:20px;}
+    .w-logo{display:flex;align-items:center;gap:8px;text-decoration:none;color:#f0fdf2;font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;}
+    .w-nav-links{display:flex;gap:4px;margin-left:auto;}
+    .w-nav-links a{color:rgba(240,253,242,.6);text-decoration:none;font-size:.82rem;padding:6px 12px;border-radius:8px;transition:all .2s;}
+    .w-nav-links a:hover,.w-nav-links a.active{color:#f0fdf2;background:rgba(255,255,255,.06);}
+    .i-main{max-width:900px;margin:0 auto;padding:32px 20px 80px;}
+    .i-title{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;margin-bottom:4px;}
+    .i-sub{color:rgba(240,253,242,.5);font-size:.85rem;margin-bottom:28px;}
+    /* FORM */
+    .i-form{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px;margin-bottom:28px;}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    @media(max-width:600px){.form-grid{grid-template-columns:1fr;}}
+    .fg{display:flex;flex-direction:column;gap:6px;}
+    .fg label{font-size:.78rem;color:rgba(240,253,242,.5);text-transform:uppercase;letter-spacing:.05em;}
+    .fg select,.fg input{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:#f0fdf2;font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;appearance:none;}
+    .fg select:focus,.fg input:focus{border-color:rgba(34,197,94,.4);}
+    .fg select option{background:#0f1f12;color:#f0fdf2;}
+    /* METHOD TOGGLE */
+    .method-toggle{display:flex;gap:8px;margin-top:4px;}
+    .mt-btn{flex:1;padding:9px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;color:rgba(240,253,242,.6);font-size:.82rem;cursor:pointer;text-align:center;transition:all .2s;}
+    .mt-btn.active{background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.4);color:#4ade80;}
+    .loc-row{display:flex;gap:8px;margin-top:16px;}
+    .loc-row input{flex:1;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:#f0fdf2;font-family:'DM Sans',sans-serif;font-size:.88rem;outline:none;}
+    .loc-row input:focus{border-color:rgba(34,197,94,.4);}
+    .loc-row button{padding:10px 16px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:10px;color:#4ade80;font-size:.82rem;cursor:pointer;white-space:nowrap;}
+    .calc-btn{width:100%;margin-top:20px;padding:14px;background:var(--green);border:none;border-radius:12px;color:#070f09;font-weight:700;font-size:.95rem;cursor:pointer;transition:opacity .2s;}
+    .calc-btn:hover{opacity:.85;}
+    .calc-btn:disabled{opacity:.4;cursor:not-allowed;}
+    /* RESULTS */
+    .results{display:none;}
+    .result-hero{background:linear-gradient(135deg,rgba(34,197,94,.12),rgba(20,184,166,.06));border:1px solid rgba(34,197,94,.2);border-radius:20px;padding:28px;margin-bottom:20px;}
+    .rh-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;margin-bottom:20px;}
+    .rh-stat{text-align:center;}
+    .rh-stat-val{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:#4ade80;}
+    .rh-stat-unit{font-size:.75rem;color:rgba(240,253,242,.5);margin-top:2px;}
+    .rh-stat-label{font-size:.72rem;color:rgba(240,253,242,.4);text-transform:uppercase;letter-spacing:.05em;margin-top:4px;}
+    .savings-box{background:rgba(168,255,62,.08);border:1px solid rgba(168,255,62,.2);border-radius:12px;padding:14px 16px;font-size:.85rem;color:#a8ff3e;margin-top:16px;}
+    /* SCHEDULE TABLE */
+    .sched-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:20px;}
+    .sched-title{font-size:.78rem;color:rgba(240,253,242,.4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;}
+    .sched-table{width:100%;border-collapse:collapse;}
+    .sched-table th{font-size:.72rem;color:rgba(240,253,242,.4);text-transform:uppercase;letter-spacing:.05em;padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);}
+    .sched-table td{padding:10px 12px;font-size:.88rem;border-bottom:1px solid rgba(255,255,255,.04);}
+    .sched-table tr:last-child td{border-bottom:none;}
+    .sched-table tr.irrigate-day td{color:#4ade80;}
+    .sched-table tr.irrigate-day td:first-child::before{content:'💧 ';}
+    .badge-on{display:inline-block;padding:2px 10px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:6px;font-size:.72rem;color:#4ade80;}
+    .badge-off{display:inline-block;padding:2px 10px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;font-size:.72rem;color:rgba(240,253,242,.3);}
+    /* ET0 CHART */
+    .et0-bars{display:flex;gap:6px;align-items:flex-end;height:60px;margin-top:12px;}
+    .et0-bar{flex:1;background:rgba(34,197,94,.3);border-radius:4px 4px 0 0;min-height:4px;transition:height .5s ease;}
+    .et0-label{font-size:.65rem;color:rgba(240,253,242,.3);text-align:center;margin-top:4px;}
+    .spinner{width:32px;height:32px;border:3px solid rgba(34,197,94,.2);border-top-color:#22c55e;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="nav.css"/>
+</head>
+<body data-page="irrigation">
+<div class="noise" aria-hidden="true"></div>
+
+<main class="i-main">
+  <h1 class="i-title">💧 Irrigation Scheduler</h1>
+  <p class="i-sub">Science-based irrigation planning using real-time ET₀ and crop coefficients</p>
+
+  <div class="i-form">
+    <div class="form-grid">
+      <div class="fg">
+        <label>Crop</label>
+        <select id="f-crop">
+          <option value="paddy">Paddy / Rice</option>
+          <option value="wheat">Wheat</option>
+          <option value="tomato" selected>Tomato</option>
+          <option value="potato">Potato</option>
+          <option value="maize">Maize / Corn</option>
+          <option value="chilli">Chilli</option>
+          <option value="mango">Mango</option>
+          <option value="banana">Banana</option>
+          <option value="sugarcane">Sugarcane</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Growth Stage</label>
+        <select id="f-stage">
+          <option value="initial">Initial (Germination / Establishment)</option>
+          <option value="development">Development (Vegetative)</option>
+          <option value="mid" selected>Mid-season (Flowering / Fruiting)</option>
+          <option value="late">Late (Ripening / Harvest)</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Field Area (Acres)</label>
+        <input type="number" id="f-area" value="1" min="0.1" step="0.1"/>
+      </div>
+      <div class="fg">
+        <label>Soil Type</label>
+        <select id="f-soil">
+          <option value="sandy">Sandy (low water holding)</option>
+          <option value="loamy" selected>Loamy (medium)</option>
+          <option value="clay">Clay (high water holding)</option>
+          <option value="black">Black Cotton Soil</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="fg" style="margin-top:16px;">
+      <label>Irrigation Method</label>
+      <div class="method-toggle">
+        <div class="mt-btn active" data-method="drip">💧 Drip<br><small style="opacity:.6">90% efficient</small></div>
+        <div class="mt-btn" data-method="sprinkler">🌧️ Sprinkler<br><small style="opacity:.6">75% efficient</small></div>
+        <div class="mt-btn" data-method="flood">🌊 Flood<br><small style="opacity:.6">60% efficient</small></div>
+      </div>
+    </div>
+
+    <div class="loc-row">
+      <input type="text" id="f-loc" placeholder="Enter location (e.g. Nashik) or use GPS"/>
+      <button id="btn-gps">📍 GPS</button>
+    </div>
+    <input type="hidden" id="f-lat" value=""/>
+    <input type="hidden" id="f-lng" value=""/>
+
+    <button class="calc-btn" id="calc-btn">Calculate Irrigation Schedule</button>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+    <div id="res-loading" style="text-align:center;padding:40px;display:none"><div class="spinner"></div><p style="margin-top:12px;color:rgba(240,253,242,.4);font-size:.85rem">Calculating with live weather data…</p></div>
+
+    <div id="res-data" style="display:none">
+      <div class="result-hero">
+        <div class="rh-grid" id="rh-grid"></div>
+        <div class="savings-box" id="savings-box"></div>
+      </div>
+
+      <div class="sched-card">
+        <div class="sched-title">Weekly Irrigation Schedule</div>
+        <table class="sched-table">
+          <thead><tr><th>Day</th><th>Date</th><th>Status</th><th>Amount</th></tr></thead>
+          <tbody id="sched-body"></tbody>
+        </table>
+      </div>
+
+      <div class="sched-card">
+        <div class="sched-title">ET₀ Forecast (mm/day) — Next 7 Days</div>
+        <div id="et0-chart"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const API = window.KRISHI_API_BASE || 'http://127.0.0.1:8000';
+let selectedMethod = 'drip';
+let lat = null, lng = null;
+
+// Method toggle
+document.querySelectorAll('.mt-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mt-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedMethod = btn.dataset.method;
+  });
+});
+
+// GPS
+document.getElementById('btn-gps').addEventListener('click', () => {
+  if (!navigator.geolocation) return;
+  document.getElementById('btn-gps').textContent = '⏳';
+  navigator.geolocation.getCurrentPosition(pos => {
+    lat = pos.coords.latitude;
+    lng = pos.coords.longitude;
+    document.getElementById('f-lat').value = lat;
+    document.getElementById('f-lng').value = lng;
+    document.getElementById('f-loc').value = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    document.getElementById('btn-gps').textContent = '✅ GPS';
+  }, () => {
+    document.getElementById('btn-gps').textContent = '📍 GPS';
+    alert('Could not get GPS location.');
+  });
+});
+
+// Geocode on location input
+document.getElementById('f-loc').addEventListener('change', async () => {
+  const q = document.getElementById('f-loc').value.trim();
+  if (!q || q.includes(',')) return;
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`);
+    const data = await res.json();
+    if (data.length) {
+      lat = parseFloat(data[0].lat);
+      lng = parseFloat(data[0].lon);
+      document.getElementById('f-lat').value = lat;
+      document.getElementById('f-lng').value = lng;
+    }
+  } catch {}
+});
+
+// Calculate
+document.getElementById('calc-btn').addEventListener('click', async () => {
+  if (!lat || !lng) {
+    // Try to geocode from input
+    const q = document.getElementById('f-loc').value.trim();
+    if (q) {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`);
+        const data = await res.json();
+        if (data.length) { lat = parseFloat(data[0].lat); lng = parseFloat(data[0].lon); }
+      } catch {}
+    }
+    if (!lat || !lng) { alert('Please enter a location or use GPS.'); return; }
+  }
+
+  const body = {
+    crop:             document.getElementById('f-crop').value,
+    growth_stage:     document.getElementById('f-stage').value,
+    field_area_acres: parseFloat(document.getElementById('f-area').value) || 1,
+    soil_type:        document.getElementById('f-soil').value,
+    lat, lng,
+    method:           selectedMethod,
+  };
+
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('res-loading').style.display = 'block';
+  document.getElementById('res-data').style.display = 'none';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  try {
+    const res = await fetch(`${API}/irrigation-schedule`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.detail || 'API error'); }
+    const data = await res.json();
+    renderResults(data);
+  } catch (e) {
+    document.getElementById('res-loading').style.display = 'none';
+    alert('Error: ' + e.message);
+  }
+});
+
+function fmt(n) { return n >= 1000 ? (n/1000).toFixed(1) + 'k' : n; }
+
+function renderResults(d) {
+  document.getElementById('res-loading').style.display = 'none';
+  document.getElementById('res-data').style.display = 'block';
+
+  // Hero stats
+  document.getElementById('rh-grid').innerHTML = `
+    <div class="rh-stat">
+      <div class="rh-stat-val">${fmt(d.water_needed_litres)}</div>
+      <div class="rh-stat-unit">litres per irrigation</div>
+      <div class="rh-stat-label">Water Needed</div>
+    </div>
+    <div class="rh-stat">
+      <div class="rh-stat-val">${d.tanker_loads_5000L}</div>
+      <div class="rh-stat-unit">× 5,000L tanker loads</div>
+      <div class="rh-stat-label">Tanker Equivalent</div>
+    </div>
+    <div class="rh-stat">
+      <div class="rh-stat-val">${d.irrigation_interval_days}</div>
+      <div class="rh-stat-unit">days between irrigations</div>
+      <div class="rh-stat-label">Interval</div>
+    </div>
+    <div class="rh-stat">
+      <div class="rh-stat-val">${d.etc_mm_per_day}</div>
+      <div class="rh-stat-unit">mm/day crop water use</div>
+      <div class="rh-stat-label">ETc (Kc=${d.kc})</div>
+    </div>
+    <div class="rh-stat">
+      <div class="rh-stat-val">${d.next_irrigation_date}</div>
+      <div class="rh-stat-unit">next irrigation due</div>
+      <div class="rh-stat-label">Next Date</div>
+    </div>
+    <div class="rh-stat">
+      <div class="rh-stat-val">${d.et0_mm_per_day}</div>
+      <div class="rh-stat-unit">mm/day reference ET</div>
+      <div class="rh-stat-label">ET₀ (Hargreaves)</div>
+    </div>
+  `;
+
+  document.getElementById('savings-box').textContent = '💡 ' + d.money_saved_vs_flood;
+
+  // Weekly schedule
+  const tbody = document.getElementById('sched-body');
+  tbody.innerHTML = (d.weekly_schedule || []).map(row => `
+    <tr class="${row.irrigate ? 'irrigate-day' : ''}">
+      <td>${row.day}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:.8rem;color:rgba(240,253,242,.5)">${row.date}</td>
+      <td>${row.irrigate ? '<span class="badge-on">Irrigate</span>' : '<span class="badge-off">Rest</span>'}</td>
+      <td>${row.irrigate ? fmt(row.amount_litres) + ' L' : '—'}</td>
+    </tr>
+  `).join('');
+
+  // ET0 chart
+  const et0 = d.et0_daily || [];
+  const maxEt = Math.max(...et0, 1);
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const todayIdx = new Date().getDay();
+  document.getElementById('et0-chart').innerHTML = `
+    <div class="et0-bars">
+      ${et0.map((v, i) => `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div style="font-size:.65rem;color:rgba(240,253,242,.5)">${v}</div>
+        <div class="et0-bar" style="height:${Math.round((v/maxEt)*50)+4}px;width:100%"></div>
+        <div class="et0-label">${days[(todayIdx + i) % 7]}</div>
+      </div>`).join('')}
+    </div>
+  `;
+}
+
+// Auto-fill from session
+window.addEventListener('load', () => {
+  try {
+    const u = JSON.parse(localStorage.getItem('kr_session'));
+    if (u?.crop) {
+      const cropMap = { 'Paddy': 'paddy', 'Wheat': 'wheat', 'Tomato': 'tomato', 'Potato': 'potato',
+        'Maize': 'maize', 'Chilli': 'chilli', 'Mango': 'mango', 'Banana': 'banana', 'Sugarcane': 'sugarcane' };
+      const v = cropMap[u.crop];
+      if (v) document.getElementById('f-crop').value = v;
+    }
+  } catch {}
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      lat = pos.coords.latitude; lng = pos.coords.longitude;
+      document.getElementById('f-lat').value = lat;
+      document.getElementById('f-lng').value = lng;
+      document.getElementById('f-loc').value = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    }, () => {});
+  }
+});
+</script>
+<script src="config.js"></script>
+<script src="nav.js"></script>
+</body>
+</html>

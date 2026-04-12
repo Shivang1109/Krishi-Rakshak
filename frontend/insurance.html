@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>PMFBY Insurance — Krishi Rakshak</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{--g:#22c55e;--lime:#a8ff3e;--bg:#0c1f12;--card:rgba(255,255,255,.04);--bdr:rgba(255,255,255,.08);--bdrh:rgba(74,222,128,.22);--t1:#f0fdf4;--tm:rgba(134,239,172,.45);--fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'JetBrains Mono',monospace;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:radial-gradient(ellipse 90% 65% at 50% -5%,#2a6e3a 0%,#183421 40%,#112a17 70%);color:var(--t1);font-family:var(--fb);min-height:100vh;}
+a{color:inherit;text-decoration:none;}
+/* NAV */
+.nav{position:sticky;top:0;z-index:100;background:rgba(7,15,9,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--bdr);padding:0 16px;}
+.nav-i{max-width:1200px;margin:0 auto;height:54px;display:flex;align-items:center;gap:12px;}
+.nav-logo{font-family:var(--fh);font-weight:800;font-size:.95rem;display:flex;align-items:center;gap:7px;}
+.nav-links{display:flex;gap:2px;margin-left:auto;flex-wrap:wrap;}
+.nav-links a{color:var(--tm);font-size:.72rem;padding:5px 9px;border-radius:7px;transition:all .2s;}
+.nav-links a:hover,.nav-links a.act{color:var(--t1);background:rgba(255,255,255,.06);}
+/* MAIN */
+.main{max-width:780px;margin:0 auto;padding:28px 16px 80px;}
+h1{font-family:var(--fh);font-size:1.7rem;font-weight:800;margin-bottom:4px;}
+.sub{color:var(--tm);font-size:.85rem;margin-bottom:24px;}
+/* PROGRESS */
+.prog-bar{display:flex;gap:0;margin-bottom:28px;border-radius:12px;overflow:hidden;border:1px solid var(--bdr);}
+.prog-step{flex:1;padding:10px 4px;text-align:center;font-size:.68rem;font-weight:600;color:var(--tm);background:var(--card);transition:all .3s;cursor:pointer;border-right:1px solid var(--bdr);}
+.prog-step:last-child{border-right:none;}
+.prog-step.done{background:rgba(34,197,94,.1);color:#4ade80;}
+.prog-step.active{background:rgba(34,197,94,.18);color:#4ade80;font-weight:700;}
+.prog-step .sn{display:block;font-family:var(--fm);font-size:.8rem;margin-bottom:2px;}
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:22px;margin-bottom:16px;}
+.card-title{font-family:var(--fh);font-size:1rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+/* FORM */
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.fg label{font-size:.65rem;color:var(--tm);text-transform:uppercase;letter-spacing:.07em;}
+.fg select,.fg input{background:rgba(255,255,255,.05);border:1px solid var(--bdr);border-radius:8px;padding:9px 12px;color:var(--t1);font-family:var(--fb);font-size:.88rem;outline:none;transition:border .2s;width:100%;}
+.fg select:focus,.fg input:focus{border-color:rgba(34,197,94,.4);}
+.fg select option{background:#0f1f12;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:500px){.form-row{grid-template-columns:1fr;}}
+/* RADIO GROUP */
+.radio-group{display:flex;gap:8px;flex-wrap:wrap;}
+.radio-btn{padding:8px 16px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:.82rem;cursor:pointer;transition:all .2s;color:var(--tm);}
+.radio-btn.sel{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#4ade80;}
+/* BUTTONS */
+.btn{padding:11px 24px;background:var(--g);border:none;border-radius:10px;color:#0a1a0e;font-weight:700;font-size:.88rem;cursor:pointer;transition:opacity .2s;}
+.btn:hover{opacity:.85;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-ghost{padding:10px 20px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:10px;color:var(--tm);font-size:.85rem;cursor:pointer;transition:all .2s;}
+.btn-ghost:hover{border-color:var(--bdrh);color:var(--t1);}
+.btn-row{display:flex;gap:10px;margin-top:18px;justify-content:space-between;flex-wrap:wrap;}
+/* RESULT BOXES */
+.res-green{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:12px;padding:16px 18px;margin-bottom:14px;}
+.res-amber{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:14px 16px;margin-bottom:14px;font-size:.82rem;color:#fbbf24;}
+.res-red{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:12px;padding:14px 16px;margin-bottom:14px;font-size:.82rem;color:#f87171;}
+.big-val{font-family:var(--fh);font-size:1.8rem;font-weight:800;color:var(--lime);}
+.val-label{font-size:.72rem;color:var(--tm);margin-top:2px;}
+/* PREMIUM BAR */
+.prem-bar-wrap{margin:14px 0;}
+.prem-bar{height:10px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden;margin-bottom:6px;}
+.prem-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#22c55e,#a8ff3e);transition:width .6s ease;}
+.prem-legend{display:flex;justify-content:space-between;font-size:.72rem;color:var(--tm);}
+/* TIMELINE */
+.timeline{display:flex;flex-direction:column;gap:0;}
+.tl-item{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.tl-item:last-child{border-bottom:none;}
+.tl-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.tl-dot.upcoming{background:#f59e0b;}
+.tl-dot.past{background:rgba(255,255,255,.2);}
+.tl-dot.active{background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,.5);}
+.tl-title{font-weight:600;font-size:.88rem;margin-bottom:3px;}
+.tl-sub{font-size:.75rem;color:var(--tm);}
+/* CHECKLIST */
+.chk-item{display:flex;align-items:flex-start;gap:12px;padding:11px 14px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:10px;margin-bottom:7px;cursor:pointer;transition:border-color .2s;}
+.chk-item:hover{border-color:var(--bdrh);}
+.chk-item.checked{background:rgba(34,197,94,.06);border-color:rgba(34,197,94,.2);}
+.chk-box{width:18px;height:18px;border:2px solid rgba(255,255,255,.2);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;margin-top:1px;}
+.chk-item.checked .chk-box{background:#22c55e;border-color:#22c55e;}
+.chk-label{font-size:.85rem;}
+.chk-sub{font-size:.72rem;color:var(--tm);margin-top:2px;}
+/* ENROL CARDS */
+.enrol-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px;}
+@media(max-width:560px){.enrol-grid{grid-template-columns:1fr;}}
+.enrol-card{background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:12px;padding:16px;text-align:center;transition:border-color .2s;}
+.enrol-card:hover{border-color:var(--bdrh);}
+.enrol-icon{font-size:1.8rem;margin-bottom:8px;}
+.enrol-title{font-size:.85rem;font-weight:600;margin-bottom:4px;}
+.enrol-sub{font-size:.72rem;color:var(--tm);margin-bottom:10px;}
+.enrol-link{display:inline-block;padding:6px 14px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);border-radius:8px;font-size:.75rem;color:#4ade80;transition:all .2s;}
+.enrol-link:hover{background:rgba(34,197,94,.2);}
+/* CLAIM GRID */
+.claim-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+@media(max-width:480px){.claim-grid{grid-template-columns:1fr;}}
+.claim-chk{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:9px;cursor:pointer;font-size:.83rem;transition:all .2s;}
+.claim-chk:hover{border-color:var(--bdrh);}
+.claim-chk.checked{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.25);color:#f87171;}
+.claim-chk .cb{width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.65rem;}
+.claim-chk.checked .cb{background:#ef4444;border-color:#ef4444;color:#fff;}
+/* CLAIM STEPS */
+.claim-step{display:flex;gap:14px;padding:14px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:12px;margin-bottom:8px;}
+.cs-num{width:32px;height:32px;border-radius:50%;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:.75rem;color:#4ade80;flex-shrink:0;}
+.cs-title{font-size:.85rem;font-weight:600;margin-bottom:4px;}
+.cs-body{font-size:.8rem;color:var(--tm);line-height:1.5;}
+/* STATUS LEGEND */
+.status-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.83rem;}
+.status-item:last-child{border-bottom:none;}
+.status-badge{padding:3px 10px;border-radius:99px;font-size:.68rem;font-weight:600;white-space:nowrap;flex-shrink:0;}
+/* STEP PANELS */
+.step-panel{display:none;}
+.step-panel.active{display:block;}
+/* COMPANY TABLE */
+.co-table{width:100%;border-collapse:collapse;font-size:.78rem;}
+.co-table td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.04);}
+.co-table tr:last-child td{border-bottom:none;}
+.co-table td:first-child{color:var(--tm);}
+</style>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="nav.css"/>
+</head>
+<body data-page="insurance">
+<div class="main">
+<h1>🛡️ PMFBY Insurance Assistant</h1>
+<p class="sub">Pradhan Mantri Fasal Bima Yojana — check eligibility, calculate premium, file claims</p>
+<div class="prog-bar" id="prog-bar">
+<div class="prog-step active" onclick="goStep(1)"><span class="sn">①</span>Eligibility</div>
+<div class="prog-step" onclick="goStep(2)"><span class="sn">②</span>Premium</div>
+<div class="prog-step" onclick="goStep(3)"><span class="sn">③</span>Enrolment</div>
+<div class="prog-step" onclick="goStep(4)"><span class="sn">④</span>Claim</div>
+<div class="prog-step" onclick="goStep(5)"><span class="sn">⑤</span>Status</div>
+</div>
+<!-- STEP 1 -->
+<div class="step-panel active" id="step-1">
+<div class="card">
+<div class="card-title">① Check Your Eligibility</div>
+<div class="form-row">
+<div class="fg"><label>State</label>
+<select id="s1-state">
+<option value="">Select state</option>
+<option>Andhra Pradesh</option><option>Assam</option><option>Bihar</option><option>Chhattisgarh</option><option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option><option>Jharkhand</option><option>Karnataka</option><option>Kerala</option><option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option><option>Odisha</option><option>Punjab</option><option>Rajasthan</option><option>Tamil Nadu</option><option>Telangana</option><option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option><option>Delhi</option><option>Goa</option><option>Jammu & Kashmir</option><option>Tripura</option><option>Meghalaya</option><option>Nagaland</option><option>Sikkim</option>
+</select></div>
+<div class="fg"><label>Crop</label>
+<select id="s1-crop">
+<option value="">Select crop</option>
+<option>Paddy</option><option>Wheat</option><option>Maize</option><option>Cotton</option><option>Sugarcane</option><option>Tomato</option><option>Potato</option><option>Onion</option><option>Groundnut</option><option>Soyabean</option><option>Chilli</option><option>Mustard</option><option>Sunflower</option><option>Tur/Arhar</option><option>Moong</option><option>Urad</option>
+</select></div>
+</div>
+<div class="fg"><label>Land Type</label>
+<div class="radio-group" id="s1-land">
+<div class="radio-btn sel" data-v="owned">Owned Land</div>
+<div class="radio-btn" data-v="tenant">Tenant Farmer</div>
+<div class="radio-btn" data-v="sharecropper">Sharecropper</div>
+</div></div>
+<div class="fg" style="margin-top:10px"><label>Season</label>
+<div class="radio-group" id="s1-season">
+<div class="radio-btn sel" data-v="kharif">Kharif (2%)</div>
+<div class="radio-btn" data-v="rabi">Rabi (1.5%)</div>
+<div class="radio-btn" data-v="annual">Annual Commercial (5%)</div>
+</div></div>
+<button class="btn" style="margin-top:16px;width:100%" onclick="checkEligibility()">Check Eligibility →</button>
+</div>
+<div id="s1-result"></div>
+<div class="btn-row" id="s1-nav" style="display:none">
+<div></div><button class="btn" onclick="goStep(2)">Next: Calculate Premium →</button>
+</div>
+</div>
+<!-- STEP 2 -->
+<div class="step-panel" id="step-2">
+<div class="card">
+<div class="card-title">② Calculate Your Premium</div>
+<div class="form-row">
+<div class="fg"><label>Sum Insured per Acre (₹)</label><input type="number" id="s2-sum" value="30000" min="1000"/></div>
+<div class="fg"><label>Number of Acres</label><input type="number" id="s2-acres" value="1" min="0.1" step="0.1"/></div>
+</div>
+<div id="s2-result" style="margin-top:4px"></div>
+<button class="btn" style="width:100%;margin-top:14px" onclick="calcPremium()">Calculate →</button>
+</div>
+<div class="btn-row"><button class="btn-ghost" onclick="goStep(1)">← Back</button><button class="btn" onclick="goStep(3)">Next: Enrolment Guide →</button></div>
+</div>
+<!-- STEP 3 -->
+<div class="step-panel" id="step-3">
+<div class="card">
+<div class="card-title">③ Enrolment Guide</div>
+<div class="timeline">
+<div class="tl-item"><div class="tl-dot active"></div><div><div class="tl-title">Kharif 2025 — Enrol before 31 July 2025</div><div class="tl-sub">Crops: Paddy, Maize, Cotton, Groundnut, Soyabean, Tur, Moong, Urad</div></div></div>
+<div class="tl-item"><div class="tl-dot upcoming"></div><div><div class="tl-title">Rabi 2025-26 — Enrol before 31 December 2025</div><div class="tl-sub">Crops: Wheat, Mustard, Gram, Lentil, Sunflower</div></div></div>
+<div class="tl-item"><div class="tl-dot past"></div><div><div class="tl-title">Annual Commercial — Enrol before 31 March</div><div class="tl-sub">Crops: Sugarcane, Banana, Potato, Onion, Tomato, Chilli</div></div></div>
+</div>
+</div>
+<div class="card">
+<div class="card-title">📋 Documents Checklist</div>
+<div id="doc-progress" style="margin-bottom:12px;font-size:.78rem;color:var(--tm)">0 of 5 documents ready</div>
+<div class="chk-item" onclick="toggleDoc(this)"><div class="chk-box"></div><div><div class="chk-label">Aadhaar Card</div><div class="chk-sub">Original + photocopy required</div></div></div>
+<div class="chk-item" onclick="toggleDoc(this)"><div class="chk-box"></div><div><div class="chk-label">Bank Passbook Copy</div><div class="chk-sub">First page showing account number and IFSC</div></div></div>
+<div class="chk-item" onclick="toggleDoc(this)"><div class="chk-box"></div><div><div class="chk-label">Land Record (Khasra / Khatauni / 7-12)</div><div class="chk-sub">Current season land record from tehsil office</div></div></div>
+<div class="chk-item" onclick="toggleDoc(this)"><div class="chk-box"></div><div><div class="chk-label">Sowing Certificate (if applicable)</div><div class="chk-sub">Required for tenant farmers and sharecroppers</div></div></div>
+<div class="chk-item" onclick="toggleDoc(this)"><div class="chk-box"></div><div><div class="chk-label">Cancelled Cheque</div><div class="chk-sub">For direct benefit transfer of claim amount</div></div></div>
+</div>
+<div class="card">
+<div class="card-title">🏢 Where to Enrol</div>
+<div class="enrol-grid">
+<div class="enrol-card"><div class="enrol-icon">🏪</div><div class="enrol-title">CSC Centre</div><div class="enrol-sub">Common Service Centre — nearest village level</div><a class="enrol-link" href="https://www.csclocator.com" target="_blank" rel="noopener">Find CSC →</a></div>
+<div class="enrol-card"><div class="enrol-icon">🏦</div><div class="enrol-title">Bank Branch</div><div class="enrol-sub">Any nationalised or cooperative bank</div><a class="enrol-link" href="https://pmfby.gov.in" target="_blank" rel="noopener">Bank List →</a></div>
+<div class="enrol-card"><div class="enrol-icon">💻</div><div class="enrol-title">Online Portal</div><div class="enrol-sub">Apply directly at pmfby.gov.in</div><a class="enrol-link" href="https://pmfby.gov.in/farmerRegistrationForm" target="_blank" rel="noopener">Apply Online →</a></div>
+</div>
+</div>
+<div class="btn-row"><button class="btn-ghost" onclick="goStep(2)">← Back</button><button class="btn" onclick="goStep(4)">Next: Claim Guide →</button></div>
+</div>
+<!-- STEP 4 -->
+<div class="step-panel" id="step-4">
+<div class="card">
+<div class="card-title">④ Claim Filing Wizard</div>
+<p style="font-size:.85rem;color:var(--tm);margin-bottom:14px">Did any of these events damage your crop?</p>
+<div class="claim-grid">
+<div class="claim-chk" onclick="toggleClaim(this)"><div class="cb"></div>🌊 Flood / Inundation</div>
+<div class="claim-chk" onclick="toggleClaim(this)"><div class="cb"></div>☀️ Drought / Dry spell</div>
+<div class="claim-chk" onclick="toggleClaim(this)"><div class="cb"></div>🌨️ Hailstorm</div>
+<div class="claim-chk" onclick="toggleClaim(this)"><div class="cb"></div>🌀 Cyclone / Storm</div>
+<div class="claim-chk" onclick="toggleClaim(this)"><div class="cb"></div>🐛 Pest / Disease attack</div>
+<div class="claim-chk" onclick="toggleClaim(this)"><div class="cb"></div>🔥 Fire</div>
+<div class="claim-chk" onclick="toggleClaim(this)"><div class="cb"></div>⚡ Lightning</div>
+<div class="claim-chk" onclick="toggleClaim(this)"><div class="cb"></div>⛰️ Landslide</div>
+</div>
+<button class="btn" id="claim-btn" style="width:100%;margin-top:4px" disabled onclick="showClaimGuide()">Show Claim Filing Guide →</button>
+</div>
+<div id="claim-guide" style="display:none">
+<div class="card">
+<div class="card-title">📋 Step-by-Step Claim Guide</div>
+<div class="claim-step"><div class="cs-num">1</div><div><div class="cs-title">Within 72 Hours — Intimate immediately</div><div class="cs-body">Call PMFBY helpline <strong style="color:#4ade80">14447</strong> or your insurance company. Take photos and videos of damaged crop with timestamp. Note the date and time of damage event.</div></div></div>
+<div class="claim-step"><div class="cs-num">2</div><div><div class="cs-title">Day 1–3 — File formal intimation</div><div class="cs-body">Visit nearest CSC, bank branch, or file online at pmfby.gov.in/claimIntimation. Keep your policy number and Aadhaar ready. Get acknowledgement receipt.</div></div></div>
+<div class="claim-step"><div class="cs-num">3</div><div><div class="cs-title">Day 3–7 — Submit written application</div><div class="cs-body">Submit written claim application with photos to your bank or insurance company. Keep photocopies of all documents submitted.</div></div></div>
+<div class="claim-step"><div class="cs-num">4</div><div><div class="cs-title">Week 2 — Crop Cutting Experiment (CCE)</div><div class="cs-body">Government officials will conduct CCE on your field. <strong style="color:#fbbf24">Be present on your field during this.</strong> CCE determines actual yield loss for claim calculation.</div></div></div>
+<div class="claim-step"><div class="cs-num">5</div><div><div class="cs-title">After CCE — Claim disbursement</div><div class="cs-body">Claim amount calculated based on yield loss vs threshold yield. Amount credited directly to your Aadhaar-linked bank account within 2–3 weeks of CCE.</div></div></div>
+</div>
+<div class="card">
+<div class="card-title">📞 Insurance Company Helplines by State</div>
+<table class="co-table">
+<tr><td>Maharashtra</td><td style="color:#4ade80">AIC: 1800-116-515</td></tr>
+<tr><td>Punjab / Haryana</td><td style="color:#4ade80">IFFCO-Tokio: 1800-103-5490</td></tr>
+<tr><td>Uttar Pradesh</td><td style="color:#4ade80">Bajaj Allianz: 1800-209-5858</td></tr>
+<tr><td>Madhya Pradesh</td><td style="color:#4ade80">SBI General: 1800-22-1111</td></tr>
+<tr><td>Rajasthan</td><td style="color:#4ade80">HDFC ERGO: 1800-266-0700</td></tr>
+<tr><td>Karnataka</td><td style="color:#4ade80">United India: 1800-425-5522</td></tr>
+<tr><td>All States</td><td style="color:#4ade80">PMFBY Helpline: 14447</td></tr>
+</table>
+</div>
+</div>
+<div class="btn-row"><button class="btn-ghost" onclick="goStep(3)">← Back</button><button class="btn" onclick="goStep(5)">Next: Check Claim Status →</button></div>
+</div>
+<!-- STEP 5 -->
+<div class="step-panel" id="step-5">
+<div class="card">
+<div class="card-title">⑤ Check Claim Status</div>
+<div class="form-row">
+<div class="fg"><label>Policy Number</label><input type="text" id="s5-policy" placeholder="e.g. PMFBY2025XXXXXX"/></div>
+<div class="fg"><label>Aadhaar Last 4 Digits</label><input type="text" id="s5-aadhar" placeholder="XXXX" maxlength="4"/></div>
+</div>
+<button class="btn" style="width:100%;margin-top:4px" onclick="checkStatus()">Check Status on pmfby.gov.in →</button>
+</div>
+<div class="card">
+<div class="card-title">📖 What Each Status Means</div>
+<div class="status-item"><span class="status-badge" style="background:rgba(96,165,250,.15);color:#60a5fa;border:1px solid rgba(96,165,250,.25)">Application Submitted</span><span style="font-size:.82rem;color:var(--tm)">Your application is received and under review by the insurance company.</span></div>
+<div class="status-item"><span class="status-badge" style="background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.25)">Under Verification</span><span style="font-size:.82rem;color:var(--tm)">Documents are being verified. You may be contacted for additional information.</span></div>
+<div class="status-item"><span class="status-badge" style="background:rgba(168,85,247,.12);color:#c084fc;border:1px solid rgba(168,85,247,.25)">CCE Scheduled</span><span style="font-size:.82rem;color:var(--tm)">Crop Cutting Experiment will happen soon — be present on your field.</span></div>
+<div class="status-item"><span class="status-badge" style="background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.25)">Claim Approved</span><span style="font-size:.82rem;color:var(--tm)">Your claim is approved. Amount will be credited to your bank account in 3–5 working days.</span></div>
+<div class="status-item"><span class="status-badge" style="background:rgba(168,255,62,.1);color:#a8ff3e;border:1px solid rgba(168,255,62,.2)">Amount Disbursed</span><span style="font-size:.82rem;color:var(--tm)">Money has been sent to your Aadhaar-linked bank account. Check your passbook.</span></div>
+<div class="status-item"><span class="status-badge" style="background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.25)">Rejected</span><span style="font-size:.82rem;color:var(--tm)">Claim rejected. You can appeal within 30 days at pmfby.gov.in or visit your bank.</span></div>
+</div>
+<div class="btn-row"><button class="btn-ghost" onclick="goStep(4)">← Back</button><a class="btn" href="https://pmfby.gov.in/farmerRegistrationForm" target="_blank" rel="noopener">Open PMFBY Portal →</a></div>
+</div>
+</div><!-- end main -->
+<script>
+const SUM_INSURED_DEFAULT={Paddy:30000,Wheat:23000,Maize:18000,Cotton:22500,Sugarcane:84000,Tomato:144000,Potato:72000,Onion:55000,Groundnut:15000,Soyabean:10800,Chilli:45000,Mustard:10500,Sunflower:9500,'Tur/Arhar':8800,Moong:4800,Urad:4800};
+const RATES={kharif:2,rabi:1.5,annual:5};
+let curStep=1,selLand='owned',selSeason='kharif';
+
+// Radio groups
+document.querySelectorAll('#s1-land .radio-btn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#s1-land .radio-btn').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');selLand=b.dataset.v;}));
+document.querySelectorAll('#s1-season .radio-btn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#s1-season .radio-btn').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');selSeason=b.dataset.v;}));
+
+// Auto-fill sum insured when crop changes
+document.getElementById('s1-crop').addEventListener('change',function(){
+  const def=SUM_INSURED_DEFAULT[this.value];
+  if(def)document.getElementById('s2-sum').value=def;
+});
+
+function goStep(n){
+  document.querySelectorAll('.step-panel').forEach((p,i)=>{p.classList.toggle('active',i+1===n);});
+  document.querySelectorAll('.prog-step').forEach((p,i)=>{p.classList.remove('active','done');if(i+1<n)p.classList.add('done');if(i+1===n)p.classList.add('active');});
+  curStep=n;window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function checkEligibility(){
+  const state=document.getElementById('s1-state').value;
+  const crop=document.getElementById('s1-crop').value;
+  if(!state||!crop){alert('Please select state and crop.');return;}
+  const rate=RATES[selSeason];
+  const def=SUM_INSURED_DEFAULT[crop]||20000;
+  document.getElementById('s2-sum').value=def;
+  document.getElementById('s1-result').innerHTML=`
+    <div class="res-green">
+      <div style="font-size:1.1rem;font-weight:700;margin-bottom:8px">✅ You are eligible for PMFBY!</div>
+      <div style="font-size:.83rem;color:rgba(240,253,242,.8);line-height:1.6">
+        All farmers growing notified crops in notified areas are eligible under PMFBY.<br>
+        <strong>Crop:</strong> ${crop} &nbsp;|&nbsp; <strong>State:</strong> ${state} &nbsp;|&nbsp; <strong>Season:</strong> ${selSeason.charAt(0).toUpperCase()+selSeason.slice(1)}<br>
+        <strong>Your premium rate: ${rate}%</strong> of sum insured per acre
+      </div>
+    </div>`;
+  document.getElementById('s1-nav').style.display='flex';
+}
+
+function calcPremium(){
+  const sum=parseFloat(document.getElementById('s2-sum').value)||30000;
+  const acres=parseFloat(document.getElementById('s2-acres').value)||1;
+  const rate=RATES[selSeason]||2;
+  const total=sum*acres;
+  const farmerPrem=Math.round(total*rate/100);
+  const govtShare=Math.round(total*(50-rate/2)/100);
+  const farmerPct=Math.round(rate/(rate+50-rate/2)*100);
+  document.getElementById('s2-result').innerHTML=`
+    <div class="res-green">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+        <div><div class="big-val">₹${farmerPrem.toLocaleString('en-IN')}</div><div class="val-label">You pay (farmer premium)</div></div>
+        <div><div class="big-val" style="color:#60a5fa">₹${govtShare.toLocaleString('en-IN')}</div><div class="val-label">Govt subsidy (approx)</div></div>
+        <div><div class="big-val" style="color:#f0fdf4">₹${total.toLocaleString('en-IN')}</div><div class="val-label">Total coverage</div></div>
+      </div>
+      <div class="prem-bar-wrap">
+        <div style="font-size:.72rem;color:var(--tm);margin-bottom:5px">Premium breakdown</div>
+        <div class="prem-bar"><div class="prem-bar-fill" style="width:${farmerPct}%"></div></div>
+        <div class="prem-legend"><span>You: ₹${farmerPrem.toLocaleString('en-IN')} (${rate}%)</span><span>Govt: ₹${govtShare.toLocaleString('en-IN')}</span></div>
+      </div>
+      <div style="font-size:.75rem;color:rgba(240,253,242,.5);margin-top:8px">For ${acres} acre(s) at ₹${sum.toLocaleString('en-IN')}/acre sum insured · ${selSeason} season</div>
+    </div>`;
+}
+
+// Doc checklist
+function toggleDoc(el){
+  el.classList.toggle('checked');
+  el.querySelector('.chk-box').innerHTML=el.classList.contains('checked')?'✓':'';
+  const total=document.querySelectorAll('.chk-item').length;
+  const done=document.querySelectorAll('.chk-item.checked').length;
+  document.getElementById('doc-progress').textContent=`${done} of ${total} documents ready`;
+}
+
+// Claim checkboxes
+function toggleClaim(el){
+  el.classList.toggle('checked');
+  el.querySelector('.cb').textContent=el.classList.contains('checked')?'✓':'';
+  const any=document.querySelectorAll('.claim-chk.checked').length>0;
+  document.getElementById('claim-btn').disabled=!any;
+}
+function showClaimGuide(){document.getElementById('claim-guide').style.display='block';document.getElementById('claim-guide').scrollIntoView({behavior:'smooth'});}
+
+function checkStatus(){
+  const p=document.getElementById('s5-policy').value.trim();
+  const a=document.getElementById('s5-aadhar').value.trim();
+  if(!p||a.length!==4){alert('Please enter policy number and last 4 digits of Aadhaar.');return;}
+  window.open('https://pmfby.gov.in/farmerRegistrationForm','_blank');
+}
+</script><script src="config.js"></script>
+<script src="nav.js"></script>
+</body></html>

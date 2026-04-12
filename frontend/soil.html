@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="krishi-api-base" content="http://127.0.0.1:8000"/>
+  <meta name="description" content="Read your Soil Health Card and get ICAR-recommended fertiliser doses for your crops — Krishi Rakshak."/>
+  <title>Soil Health — Krishi Rakshak</title>
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#22c55e"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="nav.css"/>
+  <style>
+    /* ── Skeleton Loader ── */
+    .skeleton{background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.05) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px;}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    #soil-skeleton{padding:28px 16px 80px;max-width:1000px;margin:0 auto;}
+    .sk-title{height:36px;width:220px;margin-bottom:10px;}
+    .sk-sub{height:18px;width:340px;margin-bottom:28px;}
+    .sk-tabs{height:44px;width:320px;border-radius:14px;margin-bottom:24px;}
+    .sk-card{height:340px;border-radius:16px;margin-bottom:18px;}
+    .sk-card2{height:180px;border-radius:16px;margin-bottom:18px;}
+    /* ── Page fade-in ── */
+    #soil-app{opacity:0;transition:opacity .35s ease;}
+    #soil-app.visible{opacity:1;}
+  </style>
+</head>
+<body data-page="soil">
+<div class="noise" aria-hidden="true"></div>
+
+<!-- Skeleton shown while JS hydrates -->
+<div id="soil-skeleton" aria-hidden="true">
+  <div class="skeleton sk-title"></div>
+  <div class="skeleton sk-sub"></div>
+  <div class="skeleton sk-tabs"></div>
+  <div class="skeleton sk-card"></div>
+  <div class="skeleton sk-card2"></div>
+</div>
+
+<div id="soil-app"></div>
+
+<script src="soil.js"></script>
+<script>
+  // Hide skeleton and reveal app once soil.js has finished rendering
+  (function waitForRender() {
+    const app = document.getElementById('soil-app');
+    if (app && app.innerHTML.length > 50) {
+      document.getElementById('soil-skeleton').style.display = 'none';
+      app.classList.add('visible');
+    } else {
+      requestAnimationFrame(waitForRender);
+    }
+  })();
+</script>
+<script src="config.js"></script>
+<script src="nav.js"></script>
+</body>
+</html>

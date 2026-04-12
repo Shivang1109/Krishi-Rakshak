@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Plant Tracker — Krishi Rakshak</title>
+  <meta name="description" content="Track disease progression in your crops over time. Monitor plant health trends."/>
+  <meta name="krishi-api-base" content="http://127.0.0.1:8000"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="dashboard.css"/>
+  <style>
+    /* ── Tracker extras ── */
+    .tr-wrap { max-width: 960px; margin: 0 auto; padding: 28px 24px; }
+    .tr-topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:14px; }
+    .tr-brand { display:flex; align-items:center; gap:10px; font-family:var(--fh); font-weight:800; font-size:1.1rem; color:var(--t1); }
+    .tr-nav { display:flex; gap:10px; }
+    .tr-nav a { font-family:var(--fm); font-size:.78rem; color:var(--tm); text-decoration:none; padding:5px 12px; border:1px solid var(--border); border-radius:20px; transition:all .2s; }
+    .tr-nav a:hover { border-color:var(--border-h); color:var(--green-b); }
+    .tr-nav a.active { border-color:var(--green); color:var(--green-b); background:rgba(34,197,94,.07); }
+
+    .tr-head { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:12px; }
+    .tr-title { font-family:var(--fh); font-size:1.8rem; font-weight:800; color:var(--t1); }
+    .tr-sub { font-size:.84rem; color:var(--tm); margin-top:4px; }
+    .tr-actions { display:flex; gap:10px; }
+
+    /* Add plant form */
+    .add-plant-form { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:20px; margin-bottom:24px; display:none; }
+    .add-plant-form.show { display:block; }
+    .apf-row { display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:end; }
+    .apf-group label { font-family:var(--fm); font-size:.7rem; color:var(--tm); text-transform:uppercase; letter-spacing:.07em; display:block; margin-bottom:6px; }
+    .apf-inp { width:100%; padding:9px 13px; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:10px; font-family:var(--fm); font-size:.84rem; color:var(--t1); outline:none; transition:border .2s; }
+    .apf-inp:focus { border-color:var(--green); }
+    .btn-add-plant { padding:9px 20px; background:var(--green); border:none; border-radius:10px; font-family:var(--fh); font-size:.82rem; font-weight:700; color:#0a1a0e; cursor:pointer; white-space:nowrap; }
+
+    /* Plant cards grid */
+    .plants-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+    .plant-card { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:20px; cursor:pointer; transition:all .25s; }
+    .plant-card:hover { border-color:var(--border-h); background:var(--bg-card-hover); transform:translateY(-2px); box-shadow:0 8px 32px rgba(0,0,0,.28); }
+    .pc-head { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+    .pc-icon { width:42px; height:42px; border-radius:12px; background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.2); display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0; }
+    .pc-name { font-family:var(--fh); font-size:.98rem; font-weight:700; color:var(--t1); }
+    .pc-scans { font-family:var(--fm); font-size:.72rem; color:var(--tm); margin-top:2px; }
+    .pc-trend { margin-left:auto; font-size:1.3rem; }
+    .pc-trend.worsening { color:#ef4444; }
+    .pc-trend.improving { color:#4ade80; }
+    .pc-trend.stable    { color:#f59e0b; }
+    .pc-latest { font-size:.8rem; color:var(--t1); margin-bottom:10px; }
+    .pc-latest span { color:var(--tm); font-size:.72rem; font-family:var(--fm); }
+
+    /* Mini sparkline */
+    .sparkline { display:flex; align-items:flex-end; gap:3px; height:32px; margin-bottom:12px; }
+    .spark-bar { flex:1; border-radius:3px 3px 0 0; min-height:3px; transition:height .8s; }
+    .spark-bar.healthy  { background:var(--green-d); }
+    .spark-bar.early    { background:#4ade80; }
+    .spark-bar.moderate { background:#f59e0b; }
+    .spark-bar.severe   { background:#ef4444; }
+
+    /* Severity pill */
+    .sev-dot { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:99px; font-family:var(--fm); font-size:.62rem; font-weight:600; text-transform:uppercase; }
+    .sev-dot.healthy  { background:rgba(34,197,94,.1); color:#4ade80; }
+    .sev-dot.early    { background:rgba(74,222,128,.1); color:#86efac; }
+    .sev-dot.moderate { background:rgba(245,158,11,.12); color:#fbbf24; }
+    .sev-dot.severe   { background:rgba(239,68,68,.1); color:#f87171; }
+
+    /* Timeline view */
+    .timeline-view { display:none; }
+    .timeline-view.show { display:block; }
+    .tlv-back { display:flex; align-items:center; gap:8px; font-family:var(--fh); font-size:.84rem; color:var(--green-b); cursor:pointer; margin-bottom:18px; background:none; border:none; padding:0; }
+    .tlv-back:hover { color:var(--green); }
+    .tl-line { position:relative; padding-left:28px; }
+    .tl-line::before { content:''; position:absolute; left:7px; top:0; bottom:0; width:2px; background:linear-gradient(to bottom, var(--green), rgba(34,197,94,.12)); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:18px; }
+    .tl-dot { position:absolute; left:-28px; top:10px; width:14px; height:14px; border-radius:50%; border:2px solid var(--bg-deep); flex-shrink:0; }
+    .tl-dot.healthy  { background:#4ade80; }
+    .tl-dot.early    { background:#86efac; }
+    .tl-dot.moderate { background:#f59e0b; }
+    .tl-dot.severe   { background:#ef4444; }
+    .tl-card { background:var(--bg-card); border:1px solid var(--border); border-radius:13px; padding:15px 17px; }
+    .tl-card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+    .tl-disease { font-family:var(--fh); font-size:.9rem; font-weight:700; color:var(--t1); }
+    .tl-date { font-family:var(--fm); font-size:.67rem; color:var(--tm); }
+    .tl-conf { margin-top:8px; }
+    .conf-bar-wrap { height:4px; background:rgba(255,255,255,.06); border-radius:4px; overflow:hidden; margin-top:4px; }
+    .conf-bar-fill { height:100%; border-radius:4px; background:linear-gradient(90deg,var(--green),var(--lime)); }
+    .tl-treatment { font-size:.76rem; color:var(--tm); line-height:1.6; margin-top:8px; }
+
+    /* Upload per-plant */
+    .scan-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:999; align-items:center; justify-content:center; }
+    .scan-modal.show { display:flex; }
+    .scan-modal-inner { background:var(--bg-deep); border:1px solid var(--border-h); border-radius:20px; padding:28px; max-width:420px; width:90%; }
+    .sm-title { font-family:var(--fh); font-size:1rem; font-weight:700; color:var(--t1); margin-bottom:6px; }
+    .sm-sub { font-size:.78rem; color:var(--tm); margin-bottom:18px; }
+    .sm-drop { border:2px dashed var(--border); border-radius:14px; padding:28px; text-align:center; cursor:pointer; transition:border .2s; }
+    .sm-drop:hover { border-color:var(--green); }
+    .sm-drop input { display:none; }
+    .sm-drop p { font-size:.82rem; color:var(--tm); margin-top:8px; }
+    .sm-btns { display:flex; gap:10px; margin-top:16px; }
+    .btn-sm-analyze { flex:1; padding:10px; background:var(--green); border:none; border-radius:10px; font-family:var(--fh); font-size:.84rem; font-weight:700; color:#0a1a0e; cursor:pointer; }
+    .btn-sm-cancel { padding:10px 16px; background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:10px; font-family:var(--fm); font-size:.82rem; color:var(--tm); cursor:pointer; }
+    .sm-prog { margin-top:12px; display:none; }
+    .sm-prog-inner { height:4px; background:rgba(255,255,255,.06); border-radius:4px; }
+    .sm-prog-fill { height:100%; background:linear-gradient(90deg,var(--green),var(--lime)); border-radius:4px; transition:width .4s; }
+
+    /* Export btn */
+    .btn-export { display:flex; align-items:center; gap:6px; padding:8px 16px; background:rgba(34,197,94,.07); border:1px solid var(--border); border-radius:10px; font-family:var(--fh); font-size:.78rem; font-weight:600; color:var(--green-b); cursor:pointer; transition:all .2s; }
+    .btn-export:hover { border-color:var(--green); transform:translateY(-1px); }
+
+    /* Empty */
+    .tr-empty { text-align:center; padding:60px 20px; }
+    .tr-empty-icon { font-size:3rem; margin-bottom:14px; }
+    .tr-empty-title { font-family:var(--fh); font-size:1.2rem; color:var(--t1); margin-bottom:8px; }
+    .tr-empty-sub { font-size:.84rem; color:var(--tm); }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="nav.css"/>
+</head>
+<body data-page="tracker">
+<div id="cur" aria-hidden="true"></div>
+<div id="cur-ring" aria-hidden="true"></div>
+<div class="noise" aria-hidden="true"></div>
+<div class="vig" aria-hidden="true"></div>
+
+<div class="tr-wrap">
+  <!-- Topbar -->
+  <div class="tr-topbar">
+    <div class="tr-brand">🌿 Krishi Rakshak</div>
+    </div>
+
+  <!-- Plants view -->
+  <div id="plants-view">
+    <div class="tr-head">
+      <div>
+        <div class="tr-title">My Plants 🌱</div>
+        <div class="tr-sub">Track disease progression across your fields over time</div>
+      </div>
+      <div class="tr-actions">
+        <button class="btn-export" onclick="exportCSV()">⬇️ Export CSV</button>
+        <button class="btn-add-plant" onclick="toggleAddForm()">+ Add Plant</button>
+      </div>
+    </div>
+
+    <!-- Add plant form -->
+    <div class="add-plant-form" id="add-form">
+      <div class="apf-row">
+        <div class="apf-group">
+          <label>Plant / Field Label</label>
+          <input class="apf-inp" id="new-plant-name" placeholder="e.g. Field A Row 3" maxlength="50"/>
+        </div>
+        <div class="apf-group">
+          <label>Crop Type</label>
+          <select class="apf-inp" id="new-plant-crop">
+            <option>Tomato</option><option>Rice</option><option>Wheat</option>
+            <option>Maize</option><option>Potato</option><option>Chilli</option>
+            <option>Mango</option><option>Banana</option><option>Sugarcane</option><option>Other</option>
+          </select>
+        </div>
+        <button class="btn-add-plant" onclick="addPlant()">Add →</button>
+      </div>
+    </div>
+
+    <!-- Plant grid -->
+    <div class="plants-grid" id="plants-grid"></div>
+    <div class="tr-empty" id="tr-empty" style="display:none">
+      <div class="tr-empty-icon">🪴</div>
+      <div class="tr-empty-title">No plants tracked yet</div>
+      <div class="tr-empty-sub">Add your first plant to start monitoring disease progression</div>
+    </div>
+  </div>
+
+  <!-- Timeline view (per plant) -->
+  <div class="timeline-view" id="timeline-view">
+    <button class="tlv-back" onclick="showPlantsView()">← Back to My Plants</button>
+    <div class="tr-head">
+      <div>
+        <div class="tr-title" id="tlv-title">Plant Timeline</div>
+        <div class="tr-sub" id="tlv-sub">Full diagnosis history</div>
+      </div>
+      <button class="btn-add-plant" onclick="openScanModal(currentPlant)" style="font-size:.8rem;padding:8px 16px">📷 Upload New Photo</button>
+    </div>
+    <div class="tl-line" id="tl-line"></div>
+    <div id="tlv-empty" style="display:none;text-align:center;padding:40px;font-size:.84rem;color:var(--tm)">No scans for this plant yet.</div>
+  </div>
+</div>
+
+<!-- Scan modal -->
+<div class="scan-modal" id="scan-modal">
+  <div class="scan-modal-inner">
+    <div class="sm-title" id="sm-title">📷 Upload Photo</div>
+    <div class="sm-sub" id="sm-sub">Take a clear photo of the leaf or affected area</div>
+    <div class="sm-drop" id="sm-drop" onclick="document.getElementById('sm-input').click()">
+      <input type="file" id="sm-input" accept="image/*"/>
+      <div style="font-size:2rem">🌿</div>
+      <p>Tap to choose a photo</p>
+      <p id="sm-fname" style="color:var(--green-b);margin-top:6px"></p>
+    </div>
+    <div class="sm-prog" id="sm-prog">
+      <div style="font-family:var(--fm);font-size:.7rem;color:var(--tm);margin-bottom:5px" id="sm-prog-label">Analyzing…</div>
+      <div class="sm-prog-inner"><div class="sm-prog-fill" id="sm-prog-fill" style="width:0%"></div></div>
+    </div>
+    <div class="sm-btns">
+      <button class="btn-sm-analyze" id="sm-analyze" onclick="runModalScan()">Analyze →</button>
+      <button class="btn-sm-cancel" onclick="closeScanModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.KRISHI_API_BASE || 'http://127.0.0.1:8000';
+
+// ── Cursor ──
+const cur=document.getElementById('cur'),curR=document.getElementById('cur-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px'});
+(function aR(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;curR.style.left=rx+'px';curR.style.top=ry+'px';requestAnimationFrame(aR)})();
+
+// ── Session ID (persistent, anonymous) ──
+function getSessionId(){
+  let sid = localStorage.getItem('kr_session_id');
+  if(!sid){ sid = 'kr-' + Date.now() + '-' + Math.random().toString(36).slice(2,9); localStorage.setItem('kr_session_id', sid); }
+  return sid;
+}
+const SESSION_ID = getSessionId();
+
+// ── Auth link ──
+const us = JSON.parse(localStorage.getItem('kr_session')||'null');
+if(us) document.getElementById('auth-link').textContent = '👤 '+us.name.split(' ')[0];
+
+// ── Local storage for plants ──
+function getPlants(){ return JSON.parse(localStorage.getItem('kr_plants')||'[]'); }
+function savePlants(p){ localStorage.setItem('kr_plants', JSON.stringify(p)); }
+function getHistory(pid){ return JSON.parse(localStorage.getItem('kr_phistory_'+pid)||'[]'); }
+function saveHistory(pid,h){ localStorage.setItem('kr_phistory_'+pid, JSON.stringify(h)); }
+
+// ── Seed demo plants if empty ──
+function seedDemo(){
+  if(getPlants().length) return;
+  const plants = [
+    {id:'p1',name:'Field A — Row 3',crop:'Tomato',emoji:'🍅',createdAt:'2026-03-01'},
+    {id:'p2',name:'Paddy Block B',crop:'Rice',emoji:'🌾',createdAt:'2026-03-05'},
+  ];
+  savePlants(plants);
+  saveHistory('p1',[
+    {disease:'Early Blight',confidence:.82,severity:'moderate',treatment:'Apply Mancozeb 75% WP at 2g/L',timestamp:'2026-03-10T08:00:00'},
+    {disease:'Early Blight',confidence:.73,severity:'moderate',treatment:'Continue Mancozeb; remove infected leaves',timestamp:'2026-03-17T09:30:00'},
+    {disease:'Healthy',confidence:.91,severity:'healthy',treatment:'No treatment needed',timestamp:'2026-03-24T10:00:00'},
+  ]);
+  saveHistory('p2',[
+    {disease:'Leaf Blast',confidence:.89,severity:'severe',treatment:'Apply Tricyclazole 75% WP at 0.6g/L',timestamp:'2026-03-08T07:00:00'},
+    {disease:'Leaf Blast',confidence:.71,severity:'moderate',treatment:'Continue spray; drain field temporarily',timestamp:'2026-03-15T08:00:00'},
+  ]);
+}
+seedDemo();
+
+// ── Emoji per crop ──
+const CROP_EMOJI = {Tomato:'🍅',Rice:'🌾',Wheat:'🌾',Maize:'🌽',Potato:'🥔',Chilli:'🌶️',Mango:'🥭',Banana:'🍌',Sugarcane:'🎋',Other:'🌿'};
+const TREND_ARROW = {improving:'↓',stable:'→',worsening:'↑'};
+const SEV_ORDER = {healthy:0,early:1,moderate:2,severe:3};
+
+function calcTrend(h){
+  if(h.length<2) return 'stable';
+  const l = SEV_ORDER[h[h.length-1].severity]||0;
+  const p = SEV_ORDER[h[h.length-2].severity]||0;
+  return l>p?'worsening':l<p?'improving':'stable';
+}
+
+// ── Render plant cards ──
+let currentPlant = null;
+function renderPlants(){
+  const grid = document.getElementById('plants-grid');
+  const empty = document.getElementById('tr-empty');
+  const plants = getPlants();
+  if(!plants.length){ grid.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  grid.innerHTML = plants.map(p=>{
+    const h = getHistory(p.id);
+    const trend = calcTrend(h);
+    const latest = h[h.length-1];
+    const emoji = p.emoji || CROP_EMOJI[p.crop] || '🌿';
+    const sparkBars = h.slice(-8).map(e=>{
+      const maxConf = 100;
+      const ht = Math.max(Math.round(e.confidence*maxConf),8);
+      return `<div class="spark-bar ${e.severity}" style="height:${ht}%"></div>`;
+    }).join('');
+    return `<div class="plant-card" onclick="showTimeline('${p.id}')">
+      <div class="pc-head">
+        <div class="pc-icon">${emoji}</div>
+        <div>
+          <div class="pc-name">${p.name}</div>
+          <div class="pc-scans">${p.crop} · ${h.length} scan${h.length!==1?'s':''}</div>
+        </div>
+        <div class="pc-trend ${trend}" title="${trend}">${TREND_ARROW[trend]}</div>
+      </div>
+      <div class="sparkline">${sparkBars||'<div style="font-size:.7rem;color:var(--tm)">No scans yet</div>'}</div>
+      ${latest?`<div class="pc-latest">
+        <span class="sev-dot ${latest.severity}">${latest.severity}</span>
+        ${latest.disease} <span>· ${latest.timestamp.split('T')[0]}</span>
+      </div>`:'<div class="pc-latest" style="color:var(--tm);font-size:.78rem">No scans yet</div>'}
+      <button onclick="event.stopPropagation();openScanModal('${p.id}')" style="width:100%;padding:7px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:8px;font-family:var(--fh);font-size:.74rem;font-weight:600;color:var(--green-b);cursor:pointer;margin-top:6px;transition:all .2s"
+        onmouseover="this.style.background='rgba(34,197,94,.14)'" onmouseout="this.style.background='rgba(34,197,94,.08)'">
+        📷 Upload new photo
+      </button>
+    </div>`;
+  }).join('');
+}
+
+// ── Timeline view ──
+function showTimeline(pid){
+  currentPlant = pid;
+  const plants = getPlants();
+  const plant = plants.find(p=>p.id===pid);
+  if(!plant) return;
+  const h = getHistory(pid);
+  document.getElementById('plants-view').style.display='none';
+  document.getElementById('timeline-view').classList.add('show');
+  document.getElementById('tlv-title').textContent = plant.name+' 🌱';
+  document.getElementById('tlv-sub').textContent = plant.crop+' · '+h.length+' scan'+(h.length!==1?'s':'');
+  const line = document.getElementById('tl-line');
+  const empty = document.getElementById('tlv-empty');
+  if(!h.length){ line.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  // Reverse order — newest first
+  const sorted = [...h].reverse();
+  line.innerHTML = sorted.map((e,i)=>{
+    const isFirst = i===0;
+    const trend = i<sorted.length-1
+      ? (SEV_ORDER[e.severity]>SEV_ORDER[sorted[i+1].severity]?'↑ Worsening'
+        :SEV_ORDER[e.severity]<SEV_ORDER[sorted[i+1].severity]?'↓ Improving':'→ Stable')
+      : '';
+    return `<div class="tl-item">
+      <div class="tl-dot ${e.severity}"></div>
+      <div class="tl-card">
+        <div class="tl-card-head">
+          <span class="tl-disease">${e.disease}</span>
+          <span class="sev-dot ${e.severity}">${e.severity}</span>
+        </div>
+        <div class="tl-date">${new Date(e.timestamp).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+        <div class="tl-conf">
+          <div style="display:flex;justify-content:space-between;font-family:var(--fm);font-size:.65rem;color:var(--tm)"><span>Confidence</span><span style="color:var(--green-b)">${(e.confidence*100).toFixed(1)}%</span></div>
+          <div class="conf-bar-wrap"><div class="conf-bar-fill" style="width:${e.confidence*100}%"></div></div>
+        </div>
+        ${e.treatment?`<div class="tl-treatment">💊 ${e.treatment}</div>`:''}
+        ${!isFirst&&trend?`<div style="margin-top:8px;font-family:var(--fm);font-size:.65rem;color:var(--tm)">vs previous: ${trend}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showPlantsView(){
+  document.getElementById('plants-view').style.display='block';
+  document.getElementById('timeline-view').classList.remove('show');
+  currentPlant = null;
+  renderPlants();
+}
+
+// ── Add plant ──
+function toggleAddForm(){ document.getElementById('add-form').classList.toggle('show'); }
+function addPlant(){
+  const name = document.getElementById('new-plant-name').value.trim();
+  const crop = document.getElementById('new-plant-crop').value;
+  if(!name){ alert('Please enter a plant name'); return; }
+  const plants = getPlants();
+  const p = { id:'p'+Date.now(), name, crop, emoji:CROP_EMOJI[crop]||'🌿', createdAt:new Date().toISOString().split('T')[0] };
+  plants.push(p);
+  savePlants(plants);
+  document.getElementById('new-plant-name').value='';
+  document.getElementById('add-form').classList.remove('show');
+  renderPlants();
+}
+
+// ── Scan modal ──
+let modalPlantId = null;
+let modalFile = null;
+function openScanModal(pid){
+  modalPlantId = pid;
+  modalFile = null;
+  const plant = getPlants().find(p=>p.id===pid);
+  document.getElementById('sm-title').textContent = '📷 Scan '+( plant?.name||'Plant');
+  document.getElementById('sm-sub').textContent = 'Upload a leaf photo for AI disease detection';
+  document.getElementById('sm-fname').textContent = '';
+  document.getElementById('sm-prog').style.display='none';
+  document.getElementById('sm-analyze').disabled=true;
+  document.getElementById('sm-analyze').textContent='Select image first';
+  document.getElementById('scan-modal').classList.add('show');
+}
+function closeScanModal(){ document.getElementById('scan-modal').classList.remove('show'); }
+
+document.getElementById('sm-input').addEventListener('change',e=>{
+  if(e.target.files[0]){
+    modalFile=e.target.files[0];
+    document.getElementById('sm-fname').textContent='✓ '+modalFile.name;
+    document.getElementById('sm-analyze').disabled=false;
+    document.getElementById('sm-analyze').textContent='Analyze →';
+  }
+});
+
+async function runModalScan(){
+  if(!modalFile||!modalPlantId){ alert('Please select an image.'); return; }
+  const btn = document.getElementById('sm-analyze');
+  const prog = document.getElementById('sm-prog');
+  const fill = document.getElementById('sm-prog-fill');
+  const lbl  = document.getElementById('sm-prog-label');
+  btn.disabled=true; btn.textContent='Analyzing…';
+  prog.style.display='block'; fill.style.width='20%'; lbl.textContent='Uploading image…';
+  const fd = new FormData();
+  fd.append('file', modalFile);
+  fd.append('session_id', SESSION_ID);
+  const _plant = getPlants().find(p=>p.id===modalPlantId);
+  fd.append('plant_label', _plant ? _plant.name : modalPlantId);
+  fd.append('save_history', 'true');
+  try{
+    fill.style.width='50%'; lbl.textContent='Running AI model…';
+    const res = await fetch(API+'/predict', {method:'POST',body:fd});
+    fill.style.width='85%'; lbl.textContent='Building diagnosis…';
+    if(!res.ok) throw new Error('API error '+res.status);
+    const data = await res.json();
+    fill.style.width='100%';
+    const top = data.top_prediction;
+    const treat = Array.isArray(top.treatment)?top.treatment.join('; '):top.treatment||'';
+    const entry = {
+      disease: top.display_name, confidence: top.confidence,
+      severity: top.confidence_severity||top.graded_severity||top.severity||'moderate',
+      treatment: treat,
+      timestamp: new Date().toISOString()
+    };
+    const h = getHistory(modalPlantId);
+    h.push(entry);
+    saveHistory(modalPlantId, h);
+    setTimeout(()=>{
+      closeScanModal();
+      if(currentPlant===modalPlantId) showTimeline(modalPlantId);
+      else renderPlants();
+    },600);
+  }catch(err){
+    prog.style.display='none';
+    btn.disabled=false; btn.textContent='Analyze →';
+    alert('Error: '+err.message+'\n\nMake sure the backend is running at '+API);
+  }
+}
+
+// ── Export CSV ──
+function exportCSV(){
+  const plants = getPlants();
+  if(!plants.length){ alert('No data to export.'); return; }
+  let csv = 'Plant Name,Crop,Disease,Confidence,Severity,Treatment,Timestamp\n';
+  plants.forEach(p=>{
+    const h = getHistory(p.id);
+    h.forEach(e=>{
+      csv += [p.name,p.crop,e.disease,(e.confidence*100).toFixed(1)+'%',
+              e.severity,'"'+(e.treatment||'').replace(/"/g,"''")+'"',e.timestamp
+             ].join(',') + '\n';
+    });
+  });
+  const blob = new Blob([csv],{type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='krishi-tracker-export.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ── Init ──
+renderPlants();
+
+// ── PWA ──
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+<script src="config.js"></script>
+<script src="nav.js"></script>
+</body>
+</html>

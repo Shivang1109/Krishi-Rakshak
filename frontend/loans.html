@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>KCC Loan Assistant — Krishi Rakshak</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{--g:#22c55e;--lime:#a8ff3e;--bg:#0c1f12;--card:rgba(255,255,255,.04);--bdr:rgba(255,255,255,.08);--bdrh:rgba(74,222,128,.22);--t1:#f0fdf4;--tm:rgba(134,239,172,.45);--fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'JetBrains Mono',monospace;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:radial-gradient(ellipse 90% 65% at 50% -5%,#2a6e3a 0%,#183421 40%,#112a17 70%);color:var(--t1);font-family:var(--fb);min-height:100vh;}
+a{color:inherit;text-decoration:none;}
+.nav{position:sticky;top:0;z-index:100;background:rgba(7,15,9,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--bdr);padding:0 16px;}
+.nav-i{max-width:1200px;margin:0 auto;height:54px;display:flex;align-items:center;gap:12px;}
+.nav-logo{font-family:var(--fh);font-weight:800;font-size:.95rem;display:flex;align-items:center;gap:7px;}
+.nav-links{display:flex;gap:2px;margin-left:auto;flex-wrap:wrap;}
+.nav-links a{color:var(--tm);font-size:.72rem;padding:5px 9px;border-radius:7px;transition:all .2s;}
+.nav-links a:hover,.nav-links a.act{color:var(--t1);background:rgba(255,255,255,.06);}
+.main{max-width:820px;margin:0 auto;padding:28px 16px 80px;}
+h1{font-family:var(--fh);font-size:1.7rem;font-weight:800;margin-bottom:4px;}
+.sub{color:var(--tm);font-size:.85rem;margin-bottom:28px;}
+.section{margin-bottom:24px;}
+.sec-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.sec-num{width:32px;height:32px;border-radius:50%;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:.8rem;color:#4ade80;flex-shrink:0;}
+.sec-title{font-family:var(--fh);font-size:1rem;font-weight:700;}
+.card{background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:22px;margin-bottom:14px;}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.fg label{font-size:.65rem;color:var(--tm);text-transform:uppercase;letter-spacing:.07em;}
+.fg select,.fg input{background:rgba(255,255,255,.05);border:1px solid var(--bdr);border-radius:8px;padding:9px 12px;color:var(--t1);font-family:var(--fb);font-size:.88rem;outline:none;transition:border .2s;width:100%;}
+.fg select:focus,.fg input:focus{border-color:rgba(34,197,94,.4);}
+.fg select option{background:#0f1f12;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:500px){.form-row{grid-template-columns:1fr;}}
+.btn{padding:11px 24px;background:var(--g);border:none;border-radius:10px;color:#0a1a0e;font-weight:700;font-size:.88rem;cursor:pointer;transition:opacity .2s;}
+.btn:hover{opacity:.85;}
+.btn-ghost{padding:9px 18px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:10px;color:var(--tm);font-size:.82rem;cursor:pointer;transition:all .2s;}
+.btn-ghost:hover{border-color:var(--bdrh);color:var(--t1);}
+/* QUIZ */
+.quiz-q{display:none;padding:18px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:12px;margin-bottom:10px;}
+.quiz-q.show{display:block;}
+.quiz-q-text{font-size:.9rem;font-weight:500;margin-bottom:12px;}
+.quiz-btns{display:flex;gap:8px;}
+.qbtn{padding:9px 24px;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;border:1px solid var(--bdr);background:rgba(255,255,255,.04);color:var(--tm);transition:all .2s;}
+.qbtn:hover{border-color:var(--bdrh);color:var(--t1);}
+.qbtn.yes{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3);color:#4ade80;}
+.qbtn.no{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25);color:#f87171;}
+.res-green{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:12px;padding:16px 18px;margin-top:12px;}
+.res-amber{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:14px 16px;margin-top:12px;font-size:.83rem;color:#fbbf24;}
+.res-red{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:12px;padding:14px 16px;margin-top:12px;font-size:.83rem;color:#f87171;}
+/* LOAN RESULTS */
+.loan-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:14px;}
+@media(max-width:480px){.loan-grid{grid-template-columns:1fr;}}
+.loan-stat{background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:12px;padding:14px;}
+.loan-val{font-family:var(--fh);font-size:1.5rem;font-weight:800;color:var(--lime);}
+.loan-label{font-size:.7rem;color:var(--tm);margin-top:3px;}
+/* BANK TABLE */
+.bank-table{width:100%;border-collapse:collapse;}
+.bank-table th{font-size:.65rem;color:var(--tm);text-transform:uppercase;letter-spacing:.07em;padding:9px 12px;text-align:left;border-bottom:1px solid var(--bdr);background:rgba(0,0,0,.15);}
+.bank-table td{padding:11px 12px;font-size:.83rem;border-bottom:1px solid rgba(255,255,255,.04);}
+.bank-table tr:hover td{background:rgba(34,197,94,.03);}
+.bank-table tr:last-child td{border-bottom:none;}
+.apply-link{display:inline-block;padding:4px 12px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:6px;font-size:.72rem;color:#4ade80;transition:all .2s;}
+.apply-link:hover{background:rgba(34,197,94,.18);}
+.eff-rate{font-family:var(--fm);color:#4ade80;font-weight:700;}
+/* CHECKLIST */
+.chk-item{display:flex;align-items:flex-start;gap:12px;padding:11px 14px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:10px;margin-bottom:7px;cursor:pointer;transition:border-color .2s;}
+.chk-item:hover{border-color:var(--bdrh);}
+.chk-item.checked{background:rgba(34,197,94,.06);border-color:rgba(34,197,94,.2);}
+.chk-box{width:18px;height:18px;border:2px solid rgba(255,255,255,.2);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;margin-top:1px;font-size:.7rem;}
+.chk-item.checked .chk-box{background:#22c55e;border-color:#22c55e;color:#0a1a0e;}
+.chk-label{font-size:.85rem;font-weight:500;}
+.chk-sub{font-size:.72rem;color:var(--tm);margin-top:2px;}
+.prog-wrap{margin-bottom:12px;}
+.prog-track{height:6px;background:rgba(255,255,255,.08);border-radius:6px;overflow:hidden;margin-top:6px;}
+.prog-fill{height:100%;background:linear-gradient(90deg,#22c55e,#a8ff3e);border-radius:6px;transition:width .4s ease;}
+/* REPAYMENT */
+.slider-wrap{margin:8px 0 4px;}
+.slider-wrap input[type=range]{width:100%;accent-color:var(--g);}
+.slider-labels{display:flex;justify-content:space-between;font-size:.68rem;color:var(--tm);}
+.radio-group{display:flex;gap:8px;flex-wrap:wrap;}
+.radio-btn{padding:8px 16px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:.82rem;cursor:pointer;transition:all .2s;color:var(--tm);}
+.radio-btn.sel{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#4ade80;}
+.repay-result{background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:12px;padding:16px;margin-top:14px;}
+.repay-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.84rem;}
+.repay-row:last-child{border-bottom:none;font-weight:700;}
+.repay-val{font-family:var(--fm);color:var(--lime);}
+.tip-box{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.18);border-radius:10px;padding:12px 14px;margin-top:12px;font-size:.8rem;color:rgba(240,253,242,.8);line-height:1.5;}
+.sched-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:.78rem;}
+.sched-table th{padding:7px 10px;text-align:left;border-bottom:1px solid var(--bdr);color:var(--tm);font-size:.65rem;text-transform:uppercase;letter-spacing:.06em;}
+.sched-table td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.03);font-family:var(--fm);}
+.disclaimer{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 14px;font-size:.75rem;color:#fbbf24;margin-top:12px;line-height:1.5;}
+@media print{.nav,.btn,.btn-ghost,.no-print{display:none!important;}body{background:#fff!important;color:#000!important;}.card{border:1px solid #ccc!important;background:#fff!important;break-inside:avoid;}}
+</style>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="nav.css"/>
+</head>
+<body data-page="loans">
+<div class="main">
+<h1>💳 KCC Loan Assistant</h1>
+<p class="sub">Kisan Credit Card — check eligibility, calculate loan amount, compare banks</p>
+
+<!-- SECTION 1: ELIGIBILITY QUIZ -->
+<div class="section">
+<div class="sec-head"><div class="sec-num">①</div><div class="sec-title">Am I eligible for KCC?</div></div>
+<div class="card">
+<div id="q1" class="quiz-q show"><div class="quiz-q-text">Q1: Are you a farmer, sharecropper, or oral lessee?</div><div class="quiz-btns"><button class="qbtn yes" onclick="answerQ(1,'yes')">✓ Yes</button><button class="qbtn no" onclick="answerQ(1,'no')">✗ No</button></div></div>
+<div id="q2" class="quiz-q"><div class="quiz-q-text">Q2: Do you own or have rights to agricultural land?</div><div class="quiz-btns"><button class="qbtn yes" onclick="answerQ(2,'yes')">✓ Yes</button><button class="qbtn no" onclick="answerQ(2,'no')">✗ No</button></div></div>
+<div id="q3" class="quiz-q"><div class="quiz-q-text">Q3: Are you between 18–75 years of age?</div><div class="quiz-btns"><button class="qbtn yes" onclick="answerQ(3,'yes')">✓ Yes</button><button class="qbtn no" onclick="answerQ(3,'no')">✗ No</button></div></div>
+<div id="q4" class="quiz-q"><div class="quiz-q-text">Q4: Do you have a bank account?</div><div class="quiz-btns"><button class="qbtn yes" onclick="answerQ(4,'yes')">✓ Yes</button><button class="qbtn no" onclick="answerQ(4,'no')">✗ No</button></div></div>
+<div id="q5" class="quiz-q"><div class="quiz-q-text">Q5: Do you have any existing loan default at any bank?</div><div class="quiz-btns"><button class="qbtn yes" onclick="answerQ(5,'yes')">✓ Yes (I have a default)</button><button class="qbtn no" onclick="answerQ(5,'no')">✗ No default</button></div></div>
+<div id="quiz-result"></div>
+</div>
+</div>
+
+<!-- SECTION 2: LOAN CALCULATOR -->
+<div class="section" id="sec2" style="display:none">
+<div class="sec-head"><div class="sec-num">②</div><div class="sec-title">How much loan can I get?</div></div>
+<div class="card">
+<div class="form-row">
+<div class="fg"><label>Crop</label>
+<select id="l-crop" onchange="calcLoan()">
+<option value="Paddy">Paddy</option><option value="Wheat">Wheat</option><option value="Maize">Maize</option><option value="Cotton">Cotton</option><option value="Sugarcane">Sugarcane</option><option value="Tomato">Tomato</option><option value="Potato">Potato</option><option value="Onion">Onion</option><option value="Groundnut">Groundnut</option><option value="Soyabean">Soyabean</option><option value="Chilli">Chilli</option><option value="Mustard">Mustard</option>
+</select></div>
+<div class="fg"><label>State</label>
+<select id="l-state" onchange="calcLoan()">
+<option value="default">Select state</option>
+<option value="Maharashtra">Maharashtra</option><option value="Punjab">Punjab</option><option value="UP">Uttar Pradesh</option><option value="Bihar">Bihar</option><option value="WB">West Bengal</option><option value="MP">Madhya Pradesh</option><option value="Haryana">Haryana</option><option value="Rajasthan">Rajasthan</option><option value="Karnataka">Karnataka</option><option value="AP">Andhra Pradesh</option><option value="Gujarat">Gujarat</option><option value="Odisha">Odisha</option>
+</select></div>
+</div>
+<div class="fg"><label>Field Area (Acres)</label><input type="number" id="l-acres" value="1" min="0.1" step="0.1" oninput="calcLoan()"/></div>
+<div id="loan-result"></div>
+</div>
+</div>
+
+<!-- SECTION 3: BANK COMPARISON -->
+<div class="section" id="sec3" style="display:none">
+<div class="sec-head"><div class="sec-num">③</div><div class="sec-title">Compare bank interest rates</div></div>
+<div class="card" style="overflow-x:auto">
+<table class="bank-table">
+<thead><tr><th>Bank</th><th>Base Rate</th><th>Govt Subvention</th><th>Effective Rate</th><th>Apply</th></tr></thead>
+<tbody>
+<tr><td>State Bank of India</td><td>7% p.a.</td><td>3%</td><td class="eff-rate">4% p.a.</td><td><a class="apply-link" href="https://sbi.co.in/web/agri-rural/agriculture-banking/crop-loan/kisan-credit-card" target="_blank" rel="noopener">Apply →</a></td></tr>
+<tr><td>Punjab National Bank</td><td>7% p.a.</td><td>3%</td><td class="eff-rate">4% p.a.</td><td><a class="apply-link" href="https://www.pnbindia.in/kisan-credit-card.html" target="_blank" rel="noopener">Apply →</a></td></tr>
+<tr><td>Bank of Baroda</td><td>7% p.a.</td><td>3%</td><td class="eff-rate">4% p.a.</td><td><a class="apply-link" href="https://www.bankofbaroda.in/personal-banking/loans/kisan-credit-card" target="_blank" rel="noopener">Apply →</a></td></tr>
+<tr><td>Canara Bank</td><td>7% p.a.</td><td>3%</td><td class="eff-rate">4% p.a.</td><td><a class="apply-link" href="https://canarabank.com" target="_blank" rel="noopener">Apply →</a></td></tr>
+<tr><td>Union Bank of India</td><td>7% p.a.</td><td>3%</td><td class="eff-rate">4% p.a.</td><td><a class="apply-link" href="https://www.unionbankofindia.co.in" target="_blank" rel="noopener">Apply →</a></td></tr>
+<tr><td>NABARD (via RRBs)</td><td>7% p.a.</td><td>3%</td><td class="eff-rate">4% p.a.</td><td><a class="apply-link" href="https://www.nabard.org" target="_blank" rel="noopener">Apply →</a></td></tr>
+</tbody></table>
+<div class="disclaimer">⚠️ Interest rates subject to change. Verify current rates at your bank before applying. 3% subvention applicable only if loan repaid within 12 months of disbursement.</div>
+</div>
+</div>
+
+<!-- SECTION 4: DOCUMENT CHECKLIST -->
+<div class="section" id="sec4" style="display:none">
+<div class="sec-head"><div class="sec-num">④</div><div class="sec-title">Documents you'll need</div></div>
+<div class="card">
+<div class="prog-wrap"><div id="doc-prog-text" style="font-size:.78rem;color:var(--tm)">0 of 6 documents ready</div><div class="prog-track"><div class="prog-fill" id="doc-prog-fill" style="width:0%"></div></div></div>
+<div class="chk-item" onclick="toggleDoc(this)"><div class="chk-box"></div><div><div class="chk-label">Identity Proof</div><div class="chk-sub">Aadhaar card / Voter ID / Passport / Driving licence</div></div></div>
+<div class="chk-item" onclick="toggleDoc(this)"><div class="chk-box"></div><div><div class="chk-label">Address Proof</div><div class="chk-sub">Same as identity proof, or recent utility bill</div></div></div>
+<div class="chk-item" onclick="toggleDoc(this)"><div class="chk-box"></div><div><div class="chk-label">Land Records</div><div class="chk-sub">Khasra-Khatauni / Jamabandi / Patta / 7-12 extract</div></div></div>
+<div class="chk-item" onclick="toggleDoc(this)"><div class="chk-box"></div><div><div class="chk-label">Passport Photos</div><div class="chk-sub">2 recent passport-size photographs</div></div></div>
+<div class="chk-item" onclick="toggleDoc(this)"><div class="chk-box"></div><div><div class="chk-label">Bank Account Proof</div><div class="chk-sub">Existing passbook or account statement</div></div></div>
+<div class="chk-item" onclick="toggleDoc(this)"><div class="chk-box"></div><div><div class="chk-label">Crop Details</div><div class="chk-sub">Sowing certificate or self-declaration of crop grown</div></div></div>
+<button class="btn-ghost no-print" style="margin-top:14px;width:100%" onclick="window.print()">📄 Download Checklist as PDF</button>
+</div>
+</div>
+
+<!-- SECTION 5: REPAYMENT CALCULATOR -->
+<div class="section" id="sec5" style="display:none">
+<div class="sec-head"><div class="sec-num">⑤</div><div class="sec-title">Plan your repayment</div></div>
+<div class="card">
+<div class="form-row">
+<div class="fg"><label>Loan Amount (₹)</label><input type="number" id="r-amount" value="50000" min="1000" oninput="calcRepay()"/></div>
+<div class="fg"><label>Interest Rate: <span id="r-rate-lbl" style="color:#4ade80;font-family:var(--fm)">4%</span> p.a.</label>
+<div class="slider-wrap"><input type="range" id="r-rate" min="4" max="7" step="0.5" value="4" oninput="document.getElementById('r-rate-lbl').textContent=this.value+'%';calcRepay()"/></div>
+<div class="slider-labels"><span>4% (with subvention)</span><span>7% (standard)</span></div>
+</div>
+</div>
+<div class="fg"><label>Tenure</label>
+<div class="radio-group" id="r-tenure">
+<div class="radio-btn sel" data-v="12" onclick="selTenure(this)">12 months</div>
+<div class="radio-btn" data-v="24" onclick="selTenure(this)">24 months</div>
+<div class="radio-btn" data-v="36" onclick="selTenure(this)">36 months</div>
+</div></div>
+<div id="repay-result"></div>
+</div>
+</div>
+
+</div><!-- end main -->
+<script>
+const SOF={Paddy:{Maharashtra:18000,Punjab:22000,UP:16000,Bihar:14000,WB:15000,default:16000},Wheat:{Punjab:20000,UP:18000,MP:16000,Haryana:19000,Rajasthan:15000,default:17000},Maize:{Karnataka:14000,AP:13000,MP:12000,default:13000},Cotton:{Maharashtra:25000,Gujarat:22000,AP:20000,default:22000},Sugarcane:{Maharashtra:35000,UP:28000,Karnataka:30000,default:30000},Tomato:{Maharashtra:40000,AP:35000,Karnataka:38000,default:38000},Potato:{UP:22000,Punjab:20000,WB:18000,default:20000},Onion:{Maharashtra:30000,MP:25000,default:27000},Groundnut:{Gujarat:18000,AP:16000,Rajasthan:15000,default:16000},Soyabean:{MP:14000,Maharashtra:13000,default:13000},Chilli:{AP:35000,Karnataka:30000,default:32000},Mustard:{Rajasthan:14000,UP:13000,Haryana:14000,default:13000}};
+let answers={},selTenureVal=12;
+
+function answerQ(q,ans){
+  answers[q]=ans;
+  const reasons={1:'You must be a farmer, sharecropper, or oral lessee to apply for KCC.',2:'You must own or have rights to agricultural land.',3:'Applicant must be between 18–75 years of age.',4:'A bank account is required for KCC disbursement.'};
+  if(q<5&&ans==='no'){
+    document.getElementById('quiz-result').innerHTML=`<div class="res-red">❌ Not eligible — ${reasons[q]}</div>`;
+    return;
+  }
+  if(q===5){
+    if(ans==='yes'){
+      document.getElementById('quiz-result').innerHTML=`<div class="res-amber">⚠️ Existing loan default may affect eligibility. Visit your bank for individual assessment — some banks may still approve with collateral.</div>`;
+    } else {
+      document.getElementById('quiz-result').innerHTML=`<div class="res-green"><div style="font-size:1.05rem;font-weight:700;margin-bottom:6px">✅ You are eligible for KCC!</div><div style="font-size:.82rem;color:rgba(240,253,242,.8)">You meet all eligibility criteria. Proceed to calculate your loan amount and compare banks.</div></div>`;
+      ['sec2','sec3','sec4','sec5'].forEach(id=>{document.getElementById(id).style.display='block';});
+      calcLoan();calcRepay();
+    }
+    return;
+  }
+  document.getElementById('q'+(q+1)).classList.add('show');
+}
+
+function calcLoan(){
+  const crop=document.getElementById('l-crop').value;
+  const state=document.getElementById('l-state').value;
+  const acres=parseFloat(document.getElementById('l-acres').value)||1;
+  const cropData=SOF[crop]||{default:15000};
+  const scale=cropData[state]||cropData.default||15000;
+  const base=scale*acres;
+  const postHarvest=Math.round(base*0.10);
+  const maintenance=Math.round(base*0.20);
+  const insurance=Math.round(base*0.02);
+  const total=base+postHarvest+maintenance+insurance;
+  document.getElementById('loan-result').innerHTML=`
+    <div class="loan-grid">
+      <div class="loan-stat"><div class="loan-val">₹${total.toLocaleString('en-IN')}</div><div class="loan-label">Estimated KCC Limit</div></div>
+      <div class="loan-stat"><div class="loan-val" style="color:#60a5fa">₹${(base+postHarvest).toLocaleString('en-IN')}</div><div class="loan-label">Crop Loan Sub-limit</div></div>
+      <div class="loan-stat"><div class="loan-val" style="color:#f59e0b">₹${maintenance.toLocaleString('en-IN')}</div><div class="loan-label">Term Loan Sub-limit</div></div>
+      <div class="loan-stat"><div class="loan-val" style="color:#c084fc">₹${insurance.toLocaleString('en-IN')}</div><div class="loan-label">Insurance Premium</div></div>
+    </div>
+    <div style="font-size:.72rem;color:var(--tm);margin-top:10px">Scale of Finance: ₹${scale.toLocaleString('en-IN')}/acre for ${crop} in ${state==='default'?'your state':state} · ${acres} acre(s)<br>Actual limit determined by bank based on land records and credit history.</div>`;
+  // pre-fill repayment
+  document.getElementById('r-amount').value=total;
+  calcRepay();
+}
+
+function toggleDoc(el){
+  el.classList.toggle('checked');
+  el.querySelector('.chk-box').innerHTML=el.classList.contains('checked')?'✓':'';
+  const total=document.querySelectorAll('.chk-item').length;
+  const done=document.querySelectorAll('.chk-item.checked').length;
+  document.getElementById('doc-prog-text').textContent=`${done} of ${total} documents ready`;
+  document.getElementById('doc-prog-fill').style.width=`${(done/total)*100}%`;
+}
+
+function selTenure(el){
+  document.querySelectorAll('#r-tenure .radio-btn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');selTenureVal=parseInt(el.dataset.v);calcRepay();
+}
+
+function calcRepay(){
+  const amt=parseFloat(document.getElementById('r-amount').value)||50000;
+  const rate=parseFloat(document.getElementById('r-rate').value)||4;
+  const months=selTenureVal||12;
+  const mr=rate/12/100;
+
+  // Reducing balance EMI
+  let emi, totalPay, totalInt;
+  if(mr === 0){
+    emi = amt / months;
+    totalPay = amt;
+    totalInt = 0;
+  } else {
+    emi = amt * mr * Math.pow(1+mr, months) / (Math.pow(1+mr, months) - 1);
+    totalPay = emi * months;
+    totalInt = totalPay - amt;
+  }
+  const saving12=Math.round(amt*3/100);
+
+  let rows='';
+  let bal=amt;
+  const showMonths=Math.min(months,6);
+  for(let i=1;i<=showMonths;i++){
+    const int=Math.round(bal*mr*100)/100;
+    const principal=Math.round((emi-int)*100)/100;
+    bal=Math.max(0,bal-principal);
+    rows+=`<tr><td>${i}</td><td>₹${Math.round(principal).toLocaleString('en-IN')}</td><td>₹${Math.round(int).toLocaleString('en-IN')}</td><td>₹${Math.round(bal).toLocaleString('en-IN')}</td></tr>`;
+  }
+  if(months>6)rows+=`<tr><td colspan="4" style="text-align:center;color:var(--tm);font-size:.75rem">... ${months-6} more months</td></tr>`;
+
+  document.getElementById('repay-result').innerHTML=`
+    <div class="repay-result">
+      <div class="repay-row"><span>Monthly EMI</span><span class="repay-val">₹${Math.round(emi).toLocaleString('en-IN')}</span></div>
+      <div class="repay-row"><span>Total Interest (${months} months)</span><span class="repay-val">₹${Math.round(totalInt).toLocaleString('en-IN')}</span></div>
+      <div class="repay-row"><span>Total Amount Payable</span><span class="repay-val">₹${Math.round(totalPay).toLocaleString('en-IN')}</span></div>
+    </div>
+    <table class="sched-table"><thead><tr><th>Month</th><th>Principal</th><th>Interest</th><th>Balance</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="tip-box">💡 Repaying within 12 months qualifies for 3% additional interest subvention from Govt — saving <strong>₹${saving12.toLocaleString('en-IN')}</strong> on your ₹${amt.toLocaleString('en-IN')} loan!</div>`;
+}
+</script><script src="config.js"></script>
+<script src="nav.js"></script>
+</body></html>

@@ -1,0 +1,9 @@
+services:
+  krishi-api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./krishi_history.db:/app/krishi_history.db
+    environment:
+      - PYTHONUNBUFFERED=1

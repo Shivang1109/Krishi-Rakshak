@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Crop Calendar — Krishi Rakshak</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{--g:#22c55e;--lime:#a8ff3e;--bg:#070f09;--card:rgba(255,255,255,.04);--bdr:rgba(255,255,255,.08);--bdrh:rgba(74,222,128,.22);--t1:#f0fdf4;--tm:rgba(134,239,172,.45);--fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'JetBrains Mono',monospace;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:radial-gradient(ellipse 90% 65% at 50% -5%,#2a6e3a 0%,#183421 40%,#112a17 70%);color:var(--t1);font-family:var(--fb);min-height:100vh;}
+a{color:inherit;text-decoration:none;}
+.nav{position:sticky;top:0;z-index:100;background:rgba(7,15,9,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--bdr);padding:0 16px;}
+.nav-i{max-width:1200px;margin:0 auto;height:52px;display:flex;align-items:center;gap:10px;}
+.nav-logo{font-family:var(--fh);font-weight:800;font-size:.9rem;display:flex;align-items:center;gap:6px;}
+.nav-links{display:flex;gap:2px;margin-left:auto;flex-wrap:wrap;}
+.nav-links a{color:var(--tm);font-size:.7rem;padding:4px 8px;border-radius:6px;transition:all .2s;}
+.nav-links a:hover,.nav-links a.act{color:var(--t1);background:rgba(255,255,255,.06);}
+.main{max-width:1000px;margin:0 auto;padding:24px 14px 80px;}
+h1{font-family:var(--fh);font-size:1.6rem;font-weight:800;margin-bottom:4px;}
+.sub{color:var(--tm);font-size:.83rem;margin-bottom:20px;}
+.card{background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:20px;margin-bottom:16px;}
+.card-title{font-family:var(--fh);font-size:.95rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.fg label{font-size:.65rem;color:var(--tm);text-transform:uppercase;letter-spacing:.07em;}
+.fg select,.fg input{background:rgba(255,255,255,.05);border:1px solid var(--bdr);border-radius:8px;padding:9px 12px;color:var(--t1);font-family:var(--fb);font-size:.88rem;outline:none;transition:border .2s;width:100%;}
+.fg select:focus,.fg input:focus{border-color:rgba(34,197,94,.4);}
+.fg select option{background:#0f1f12;}
+.form-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+@media(max-width:600px){.form-row{grid-template-columns:1fr;}}
+.btn{padding:11px 24px;background:var(--g);border:none;border-radius:10px;color:#0a1a0e;font-weight:700;font-size:.88rem;cursor:pointer;transition:opacity .2s;width:100%;margin-top:4px;}
+.btn:hover{opacity:.85;}
+/* TODAY CARD */
+.today-card{background:linear-gradient(135deg,rgba(34,197,94,.12),rgba(20,184,166,.06));border:1px solid rgba(34,197,94,.25);border-radius:16px;padding:20px;margin-bottom:16px;}
+.today-day{font-family:var(--fh);font-size:1.3rem;font-weight:800;margin-bottom:4px;}
+.today-stage{display:inline-block;padding:3px 12px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:99px;font-size:.75rem;color:#4ade80;margin-bottom:12px;}
+.task-item{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.84rem;}
+.task-item:last-child{border-bottom:none;}
+.task-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;flex-shrink:0;margin-top:6px;}
+.alert-item{display:flex;align-items:flex-start;gap:8px;padding:8px 12px;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);border-radius:8px;margin-top:8px;font-size:.82rem;color:#fca5a5;}
+/* TIMELINE (GANTT) */
+.gantt-wrap{overflow-x:auto;padding-bottom:8px;}
+.gantt{position:relative;min-width:600px;}
+.gantt-header{display:flex;margin-bottom:6px;}
+.gantt-label-col{width:140px;flex-shrink:0;}
+.gantt-days{flex:1;display:flex;}
+.gantt-month{flex:1;font-size:.65rem;color:var(--tm);text-align:center;border-left:1px solid rgba(255,255,255,.04);padding:3px 0;}
+.gantt-row{display:flex;align-items:center;margin-bottom:6px;position:relative;}
+.gantt-stage-label{width:140px;flex-shrink:0;font-size:.75rem;color:var(--tm);padding-right:10px;line-height:1.3;}
+.gantt-track{flex:1;height:28px;background:rgba(255,255,255,.03);border-radius:4px;position:relative;}
+.gantt-bar{position:absolute;height:100%;border-radius:4px;display:flex;align-items:center;padding:0 8px;font-size:.65rem;font-weight:600;color:rgba(0,0,0,.8);overflow:hidden;white-space:nowrap;cursor:pointer;transition:opacity .2s;}
+.gantt-bar:hover{opacity:.85;}
+.today-line{position:absolute;top:0;bottom:0;width:2px;background:#ef4444;z-index:10;pointer-events:none;}
+.today-line::before{content:'Today';position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:.6rem;color:#f87171;white-space:nowrap;font-family:var(--fm);}
+/* MONTH CALENDAR */
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.month-header{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px;}
+.month-header div{text-align:center;font-size:.65rem;color:var(--tm);padding:4px 0;}
+.cal-day{min-height:52px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.04);border-radius:6px;padding:4px;cursor:pointer;transition:border-color .2s;position:relative;}
+.cal-day:hover{border-color:var(--bdrh);}
+.cal-day.today{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.05);}
+.cal-day.other-month{opacity:.3;}
+.cal-day-num{font-size:.7rem;font-family:var(--fm);margin-bottom:2px;}
+.cal-day-stage{font-size:.55rem;border-radius:3px;padding:1px 4px;margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+/* VIEW TOGGLE */
+.view-toggle{display:flex;gap:4px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:10px;padding:3px;width:fit-content;margin-bottom:16px;}
+.vt-btn{padding:6px 16px;border-radius:7px;font-size:.75rem;cursor:pointer;color:var(--tm);transition:all .2s;border:none;background:none;}
+.vt-btn.active{background:rgba(34,197,94,.15);color:#4ade80;}
+/* UPCOMING */
+.upcoming-item{display:flex;gap:12px;padding:11px 14px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:10px;margin-bottom:7px;}
+.up-days{font-family:var(--fm);font-size:.75rem;color:var(--lime);min-width:60px;padding-top:2px;}
+.up-text{font-size:.83rem;line-height:1.5;}
+/* CROP TABS */
+.crop-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.crop-tab{padding:6px 14px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:.78rem;cursor:pointer;color:var(--tm);transition:all .2s;display:flex;align-items:center;gap:5px;}
+.crop-tab.active{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3);color:#4ade80;}
+.crop-tab .del{opacity:0;font-size:.65rem;margin-left:4px;}
+.crop-tab:hover .del{opacity:1;}
+@media print{.nav,.view-toggle,.btn,.no-print{display:none!important;}body{background:#fff!important;color:#000!important;}.card{border:1px solid #ccc!important;background:#fff!important;break-inside:avoid;}}
+</style>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="nav.css"/>
+</head>
+<body data-page="calendar">
+<div class="main">
+<h1>📅 Crop Calendar Planner</h1>
+<p class="sub">Track crop stages, get daily tasks, and plan your season</p>
+
+<!-- SETUP FORM -->
+<div class="card" id="setup-card">
+<div class="card-title">🌱 Add a Crop to Track</div>
+<div class="form-row">
+<div class="fg"><label>Crop</label>
+<select id="f-crop">
+<option value="paddy">🌾 Paddy (Kharif)</option>
+<option value="wheat">🌾 Wheat (Rabi)</option>
+<option value="tomato">🍅 Tomato</option>
+<option value="potato">�� Potato</option>
+<option value="maize">🌽 Maize</option>
+<option value="chilli">🌶️ Chilli</option>
+<option value="onion">🧅 Onion</option>
+<option value="mango">🥭 Mango</option>
+<option value="banana">🍌 Banana</option>
+<option value="sugarcane">🎋 Sugarcane</option>
+</select></div>
+<div class="fg"><label>State</label>
+<select id="f-state">
+<option>Maharashtra</option><option>Punjab</option><option>Uttar Pradesh</option><option>Bihar</option><option>West Bengal</option><option>Madhya Pradesh</option><option>Karnataka</option><option>Andhra Pradesh</option><option>Gujarat</option><option>Rajasthan</option><option>Tamil Nadu</option><option>Haryana</option><option>Odisha</option>
+</select></div>
+<div class="fg"><label>Sowing Date</label><input type="date" id="f-sow"/></div>
+</div>
+<button class="btn" onclick="addCrop()">+ Add to Calendar</button>
+</div>
+
+<!-- CROP TABS -->
+<div class="crop-tabs" id="crop-tabs" style="display:none"></div>
+
+<!-- TODAY CARD -->
+<div id="today-card" style="display:none"></div>
+
+<!-- UPCOMING -->
+<div id="upcoming-card" style="display:none"></div>
+
+<!-- VIEW TOGGLE + CALENDAR -->
+<div id="cal-section" style="display:none">
+<div class="view-toggle no-print">
+<button class="vt-btn active" id="vt-timeline" onclick="setView('timeline',this)">📊 Timeline</button>
+<button class="vt-btn" id="vt-month" onclick="setView('month',this)">📅 Month</button>
+</div>
+<div class="card" id="cal-card"></div>
+<button class="btn-ghost no-print" style="margin-top:8px;padding:9px 18px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:10px;color:var(--tm);font-size:.82rem;cursor:pointer;" onclick="window.print()">🖨️ Print Season Calendar</button>
+</div>
+</div>
+<script src="config.js"></script>
+<script src="nav.js"></script>
+</body>
+</html>
+<script>
+const CROP_CALENDAR={
+  paddy:{label:'Paddy',emoji:'🌾',duration:120,stages:[
+    {name:'Nursery',day:0,dur:25,color:'#22c55e',tasks:['Prepare nursery bed 1m wide','Apply 2kg DAP per 10 sqm','Sow pre-germinated seeds'],watch:['Damping off disease','Root rot']},
+    {name:'Transplanting',day:25,dur:5,color:'#4ade80',tasks:['Transplant 2-3 seedlings/hill','Maintain 2-3cm water level','Apply basal fertiliser (DAP+MOP)'],watch:['Transplant shock','Stem borer']},
+    {name:'Vegetative',day:30,dur:33,color:'#86efac',tasks:['Apply N fertiliser at 21 DAT','Weed management','Monitor water level'],watch:['Leaf folder','Blast disease','Brown plant hopper']},
+    {name:'Panicle Init.',day:63,dur:20,color:'#fbbf24',tasks:['Apply second N dose','Ensure adequate water','Scout for neck blast'],watch:['Neck blast — CRITICAL','False smut']},
+    {name:'Flowering',day:83,dur:25,color:'#f59e0b',tasks:['Maintain water until milky stage','Avoid pesticides during flowering','Bird scaring'],watch:['Grain discoloration','Sparrow damage']},
+    {name:'Harvest',day:108,dur:12,color:'#a8ff3e',tasks:['Drain field 2 weeks before harvest','Harvest at 80% golden panicle','Thresh and dry immediately'],watch:['Premature harvest loss']},
+  ]},
+  wheat:{label:'Wheat',emoji:'🌾',duration:130,stages:[
+    {name:'Germination',day:0,dur:10,color:'#22c55e',tasks:['Ensure proper seed-bed preparation','Apply basal dose DAP+MOP','Sow at 100kg seed/acre'],watch:['Poor germination','Termite attack']},
+    {name:'Tillering',day:10,dur:30,color:'#4ade80',tasks:['Apply first N dose at CRI (21 days)','Irrigation at CRI stage','Weed control'],watch:['Yellow rust','Aphids']},
+    {name:'Jointing',day:40,dur:25,color:'#86efac',tasks:['Apply second N dose','Irrigation at jointing','Scout for rust'],watch:['Brown rust','Yellow rust — CRITICAL']},
+    {name:'Heading',day:65,dur:20,color:'#fbbf24',tasks:['Irrigation at heading','Avoid lodging — no excess N','Scout for Karnal bunt'],watch:['Karnal bunt','Loose smut']},
+    {name:'Grain Fill',day:85,dur:30,color:'#f59e0b',tasks:['Last irrigation at milky stage','Protect from birds','Prepare harvesting equipment'],watch:['Aphids','Heat stress']},
+    {name:'Harvest',day:115,dur:15,color:'#a8ff3e',tasks:['Harvest at golden yellow stage','Thresh immediately','Store at <12% moisture'],watch:['Shattering loss']},
+  ]},
+  tomato:{label:'Tomato',emoji:'🍅',duration:120,stages:[
+    {name:'Nursery',day:0,dur:25,color:'#22c55e',tasks:['Prepare raised nursery beds','Treat seeds with Thiram','Sow at 150g/acre nursery'],watch:['Damping off','Leaf curl virus']},
+    {name:'Transplanting',day:25,dur:5,color:'#4ade80',tasks:['Transplant 25-30 day old seedlings','Apply basal DAP+MOP','Stake plants at transplanting'],watch:['Transplant shock','Wilt']},
+    {name:'Vegetative',day:30,dur:25,color:'#86efac',tasks:['Apply first N dose at 15 DAT','Install stakes/cages','Weed management'],watch:['Early blight','Leaf miner']},
+    {name:'Flowering',day:55,dur:20,color:'#fbbf24',tasks:['Apply second N dose','Foliar spray of boron','Avoid excess N — causes flower drop'],watch:['Late blight','Fruit borer']},
+    {name:'Fruit Set',day:75,dur:25,color:'#f59e0b',tasks:['Apply third N dose','Spray for fruit borer','Maintain regular irrigation'],watch:['Late blight — CRITICAL','Fruit cracking']},
+    {name:'Harvest',day:100,dur:20,color:'#a8ff3e',tasks:['Harvest at breaker stage for market','Grade and pack carefully','Continue harvesting every 3-4 days'],watch:['Post-harvest rot']},
+  ]},
+  potato:{label:'Potato',emoji:'🥔',duration:100,stages:[
+    {name:'Planting',day:0,dur:10,color:'#22c55e',tasks:['Plant certified seed tubers','Apply basal DAP+MOP+FYM','Maintain 60cm row spacing'],watch:['Seed rot','Wireworm']},
+    {name:'Emergence',day:10,dur:15,color:'#4ade80',tasks:['First irrigation after emergence','Apply first N dose','Weed control'],watch:['Early blight','Aphids']},
+    {name:'Earthing Up',day:25,dur:15,color:'#86efac',tasks:['Earth up plants','Apply second N dose','Spray for late blight preventively'],watch:['Late blight — CRITICAL','Colorado beetle']},
+    {name:'Tuber Init.',day:40,dur:25,color:'#fbbf24',tasks:['Maintain soil moisture','Spray Metalaxyl+Mancozeb','Avoid water stress'],watch:['Late blight','Tuber moth']},
+    {name:'Bulking',day:65,dur:25,color:'#f59e0b',tasks:['Regular irrigation','Continue blight monitoring','Reduce N application'],watch:['Late blight','Bacterial wilt']},
+    {name:'Harvest',day:90,dur:10,color:'#a8ff3e',tasks:['Haulm killing 2 weeks before harvest','Harvest when skin is set','Cure tubers before storage'],watch:['Mechanical damage']},
+  ]},
+  maize:{label:'Maize',emoji:'🌽',duration:110,stages:[
+    {name:'Germination',day:0,dur:10,color:'#22c55e',tasks:['Sow at 20kg seed/acre','Apply basal DAP+MOP','Maintain 60x20cm spacing'],watch:['Poor germination','Termite']},
+    {name:'Seedling',day:10,dur:20,color:'#4ade80',tasks:['Thinning to one plant/hill','Apply first N dose','Weed control'],watch:['Fall armyworm','Leaf blight']},
+    {name:'Knee-High',day:30,dur:20,color:'#86efac',tasks:['Apply second N dose','Earthing up','Irrigation if dry'],watch:['Fall armyworm — CRITICAL','Stem borer']},
+    {name:'Tasseling',day:50,dur:15,color:'#fbbf24',tasks:['Apply third N dose','Ensure adequate water','Detasseling for seed crop'],watch:['Downy mildew','Smut']},
+    {name:'Silking',day:65,dur:20,color:'#f59e0b',tasks:['Critical irrigation at silking','Spray for cob borer','Avoid pesticides during pollination'],watch:['Cob borer','Grain mold']},
+    {name:'Harvest',day:85,dur:25,color:'#a8ff3e',tasks:['Harvest at 25% moisture','Dry to 12% before storage','Shell and store properly'],watch:['Aflatoxin in storage']},
+  ]},
+  chilli:{label:'Chilli',emoji:'🌶️',duration:150,stages:[
+    {name:'Nursery',day:0,dur:30,color:'#22c55e',tasks:['Prepare raised nursery beds','Treat seeds with Thiram','Sow at 200g/acre nursery'],watch:['Damping off','Thrips']},
+    {name:'Transplanting',day:30,dur:5,color:'#4ade80',tasks:['Transplant 30-35 day seedlings','Apply basal fertiliser','Mulch with dry leaves'],watch:['Transplant shock','Wilt']},
+    {name:'Vegetative',day:35,dur:30,color:'#86efac',tasks:['Apply first N dose','Install stakes','Weed management'],watch:['Leaf curl virus','Thrips']},
+    {name:'Flowering',day:65,dur:25,color:'#fbbf24',tasks:['Apply second N dose','Spray boron for fruit set','Avoid water stress'],watch:['Anthracnose','Fruit borer']},
+    {name:'Fruiting',day:90,dur:40,color:'#f59e0b',tasks:['Apply third N dose','Spray for anthracnose','Regular harvesting'],watch:['Anthracnose — CRITICAL','Mites']},
+    {name:'Harvest',day:130,dur:20,color:'#a8ff3e',tasks:['Harvest at red ripe stage','Grade and dry in shade','Continue harvesting every 7 days'],watch:['Post-harvest rot']},
+  ]},
+  onion:{label:'Onion',emoji:'🧅',duration:130,stages:[
+    {name:'Nursery',day:0,dur:40,color:'#22c55e',tasks:['Prepare raised nursery beds','Sow at 4kg seed/acre nursery','Apply Trichoderma to soil'],watch:['Damping off','Purple blotch']},
+    {name:'Transplanting',day:40,dur:5,color:'#4ade80',tasks:['Transplant 40-day seedlings','Apply basal DAP+MOP','Maintain 15x10cm spacing'],watch:['Transplant shock']},
+    {name:'Vegetative',day:45,dur:35,color:'#86efac',tasks:['Apply first N dose','Weed control','Irrigation every 7-10 days'],watch:['Thrips','Purple blotch']},
+    {name:'Bulb Init.',day:80,dur:25,color:'#fbbf24',tasks:['Apply second N dose','Reduce irrigation frequency','Scout for thrips'],watch:['Thrips — CRITICAL','Stemphylium blight']},
+    {name:'Bulbing',day:105,dur:15,color:'#f59e0b',tasks:['Stop N application','Reduce irrigation','Neck fall indicates maturity'],watch:['Basal rot','Downy mildew']},
+    {name:'Harvest',day:120,dur:10,color:'#a8ff3e',tasks:['Harvest when 50% neck fall','Cure in field for 3-5 days','Grade and store in cool dry place'],watch:['Storage rot']},
+  ]},
+  mango:{label:'Mango',emoji:'🥭',duration:240,stages:[
+    {name:'Post-harvest',day:0,dur:30,color:'#22c55e',tasks:['Prune dead/crossing branches after harvest','Apply FYM 50kg/tree in ring basin','Spray copper fungicide on pruning cuts'],watch:['Stem-end rot','Gall midge']},
+    {name:'Vegetative flush',day:30,dur:45,color:'#4ade80',tasks:['Apply first fertiliser dose (N+P+K)','Spray Imidacloprid for hoppers','Monitor new flush for midge'],watch:['Mango hopper','Leaf webber','Anthracnose']},
+    {name:'Flower initiation',day:75,dur:30,color:'#86efac',tasks:['Apply potassium to promote flowering','Spray Paclobutrazol if needed','Avoid irrigation to stress for flowering'],watch:['Powdery mildew — CRITICAL','Mango hopper']},
+    {name:'Flowering',day:105,dur:25,color:'#fbbf24',tasks:['Spray wettable sulphur for powdery mildew','Avoid pesticides during peak flowering','Provide irrigation if dry'],watch:['Powdery mildew','Flower blight','Thrips']},
+    {name:'Fruit set & dev.',day:130,dur:75,color:'#f59e0b',tasks:['Apply second fertiliser dose','Spray Carbendazim for anthracnose','Bag fruits for quality if needed','Fruit thinning for large size'],watch:['Anthracnose','Fruit fly — CRITICAL','Stone weevil']},
+    {name:'Maturity & harvest',day:205,dur:35,color:'#a8ff3e',tasks:['Harvest at physiological maturity','Hot water treatment (52°C, 5 min) for post-harvest','Grade and pack carefully'],watch:['Post-harvest rot','Fruit fly damage']},
+  ]},
+  banana:{label:'Banana',emoji:'🍌',duration:300,stages:[
+    {name:'Planting',day:0,dur:30,color:'#22c55e',tasks:['Plant tissue culture or sucker','Apply FYM 10kg/plant in pit','Maintain 1.8×1.5m spacing','Mulch with dry leaves'],watch:['Rhizome rot','Nematodes']},
+    {name:'Establishment',day:30,dur:60,color:'#4ade80',tasks:['Apply first fertiliser split (N+K)','Irrigate every 3-4 days','Remove suckers except one follower','Spray for leaf spot if needed'],watch:['Sigatoka leaf spot','Banana weevil']},
+    {name:'Vegetative growth',day:90,dur:90,color:'#86efac',tasks:['Apply second fertiliser split','Prop plants against wind','Desuckering — keep one follower','Spray Mancozeb for Sigatoka'],watch:['Sigatoka — CRITICAL','Panama wilt','Thrips']},
+    {name:'Shooting',day:180,dur:30,color:'#fbbf24',tasks:['Apply third fertiliser split (K-heavy)','Remove male bud after last hand','Bag the bunch with perforated polythene','Prop bunch with bamboo'],watch:['Banana weevil','Fruit scarring beetle']},
+    {name:'Bunch development',day:210,dur:60,color:'#f59e0b',tasks:['Maintain irrigation — critical stage','Remove dry leaves','Monitor for fruit quality','Apply potassium foliar spray'],watch:['Fruit splitting','Anthracnose','Mealybug']},
+    {name:'Harvest',day:270,dur:30,color:'#a8ff3e',tasks:['Harvest at 75-80% maturity (green)','Cut bunch with sharp knife','Handle carefully to avoid bruising','Ripen at room temperature'],watch:['Post-harvest crown rot','Bruising damage']},
+  ]},
+  sugarcane:{label:'Sugarcane',emoji:'🎋',duration:365,stages:[
+    {name:'Germination',day:0,dur:30,color:'#22c55e',tasks:['Plant 2-3 budded setts','Apply basal fertiliser','Maintain soil moisture'],watch:['Red rot','Termite']},
+    {name:'Tillering',day:30,dur:60,color:'#4ade80',tasks:['Apply first N dose at 30 days','Earthing up','Weed control'],watch:['Early shoot borer','Pyrilla']},
+    {name:'Grand Growth',day:90,dur:180,color:'#86efac',tasks:['Apply second N dose','Propping to prevent lodging','Irrigation every 10-15 days'],watch:['Top borer','Woolly aphid']},
+    {name:'Maturity',day:270,dur:60,color:'#fbbf24',tasks:['Stop irrigation 30 days before harvest','Trash mulching','Arrange harvesting labour'],watch:['Smut','Red rot']},
+    {name:'Harvest',day:330,dur:35,color:'#a8ff3e',tasks:['Harvest at 12+ months','Crush within 24 hours','Ratoon management'],watch:['Ratoon stunting disease']},
+  ]},
+};
+
+let activeCrops=[];
+let activeCropIdx=0;
+let curView='timeline';
+
+// Load saved crops
+try{activeCrops=JSON.parse(localStorage.getItem('kr_cal_crops'))||[];}catch{activeCrops=[];}
+
+// Set default sowing date
+document.getElementById('f-sow').value=new Date().toISOString().split('T')[0];
+
+function saveCrops(){localStorage.setItem('kr_cal_crops',JSON.stringify(activeCrops));}
+
+function addCrop(){
+  const crop=document.getElementById('f-crop').value;
+  const state=document.getElementById('f-state').value;
+  const sow=document.getElementById('f-sow').value;
+  if(!sow){alert('Please select a sowing date.');return;}
+  const data=CROP_CALENDAR[crop];if(!data)return;
+  activeCrops.push({id:Date.now(),crop,state,sow,label:data.label,emoji:data.emoji});
+  activeCropIdx=activeCrops.length-1;
+  saveCrops();renderAll();
+}
+
+function removeCrop(idx){
+  activeCrops.splice(idx,1);
+  if(activeCropIdx>=activeCrops.length)activeCropIdx=Math.max(0,activeCrops.length-1);
+  saveCrops();renderAll();
+}
+
+function selectCrop(idx){activeCropIdx=idx;renderAll();}
+
+function renderAll(){
+  if(!activeCrops.length){
+    document.getElementById('crop-tabs').style.display='none';
+    document.getElementById('today-card').style.display='none';
+    document.getElementById('upcoming-card').style.display='none';
+    document.getElementById('cal-section').style.display='none';
+    return;
+  }
+  // Tabs
+  const tabsEl=document.getElementById('crop-tabs');
+  tabsEl.style.display='flex';
+  tabsEl.innerHTML=activeCrops.map((c,i)=>`
+    <div class="crop-tab ${i===activeCropIdx?'active':''}" onclick="selectCrop(${i})">
+      ${c.emoji} ${c.label}
+      <span class="del" onclick="event.stopPropagation();removeCrop(${i})">✕</span>
+    </div>`).join('');
+
+  const c=activeCrops[activeCropIdx];
+  const data=CROP_CALENDAR[c.crop];
+  const sowDate=new Date(c.sow);
+  const today=new Date();
+  const dayNum=Math.floor((today-sowDate)/(1000*60*60*24));
+
+  // Today card
+  renderTodayCard(data,dayNum,sowDate);
+  // Upcoming
+  renderUpcoming(data,dayNum,sowDate);
+  // Calendar
+  document.getElementById('cal-section').style.display='block';
+  if(curView==='timeline')renderTimeline(data,dayNum,sowDate);
+  else renderMonth(data,dayNum,sowDate);
+}
+
+function renderTodayCard(data,dayNum,sowDate){
+  const el=document.getElementById('today-card');
+  if(dayNum<0||dayNum>data.duration){el.style.display='none';return;}
+  el.style.display='block';
+  const stage=data.stages.find(s=>dayNum>=s.day&&dayNum<s.day+s.dur)||data.stages[data.stages.length-1];
+  const daysInStage=dayNum-stage.day;
+  el.innerHTML=`<div class="today-card">
+    <div class="today-day">📅 Day ${dayNum} of your ${data.label} crop</div>
+    <div class="today-stage" style="background:${stage.color}22;border-color:${stage.color}44;color:${stage.color}">${stage.name} stage (Day ${daysInStage+1} of ${stage.dur})</div>
+    <div style="font-size:.78rem;color:var(--tm);margin-bottom:10px">Sown: ${sowDate.toLocaleDateString('en-IN')} · Today: ${new Date().toLocaleDateString('en-IN')}</div>
+    <div style="font-size:.8rem;font-weight:600;color:var(--tm);margin-bottom:6px">TODAY'S TASKS</div>
+    ${stage.tasks.map(t=>`<div class="task-item"><div class="task-dot"></div>${t}</div>`).join('')}
+    ${stage.watch.map(w=>`<div class="alert-item">⚠️ Watch for: ${w}</div>`).join('')}
+  </div>`;
+}
+
+function renderUpcoming(data,dayNum,sowDate){
+  const el=document.getElementById('upcoming-card');
+  const upcoming=[];
+  data.stages.forEach(s=>{
+    const daysUntil=s.day-dayNum;
+    if(daysUntil>0&&daysUntil<=14){
+      upcoming.push({days:daysUntil,name:s.name,tasks:s.tasks,watch:s.watch});
+    }
+    // Task reminders within current stage
+    if(dayNum>=s.day&&dayNum<s.day+s.dur){
+      const daysLeft=s.day+s.dur-dayNum;
+      if(daysLeft<=5&&daysLeft>0){
+        upcoming.push({days:daysLeft,name:`${s.name} ends`,tasks:[`Prepare for next stage`],watch:[]});
+      }
+    }
+  });
+  if(!upcoming.length){el.style.display='none';return;}
+  el.style.display='block';
+  el.innerHTML=`<div class="card">
+    <div class="card-title">⏰ Upcoming (Next 14 Days)</div>
+    ${upcoming.sort((a,b)=>a.days-b.days).map(u=>`
+      <div class="upcoming-item">
+        <div class="up-days">In ${u.days}d</div>
+        <div class="up-text"><strong>${u.name}</strong><br>${u.tasks[0]}${u.watch.length?`<br><span style="color:#fca5a5;font-size:.75rem">⚠️ ${u.watch[0]}</span>`:''}</div>
+      </div>`).join('')}
+  </div>`;
+}
+
+function setView(v,btn){
+  curView=v;
+  document.querySelectorAll('.vt-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(!activeCrops.length)return;
+  const c=activeCrops[activeCropIdx];
+  const data=CROP_CALENDAR[c.crop];
+  const sowDate=new Date(c.sow);
+  const today=new Date();
+  const dayNum=Math.floor((today-sowDate)/(1000*60*60*24));
+  if(v==='timeline')renderTimeline(data,dayNum,sowDate);
+  else renderMonth(data,dayNum,sowDate);
+}
+
+function renderTimeline(data,dayNum,sowDate){
+  const el=document.getElementById('cal-card');
+  const totalDays=data.duration;
+  const todayPct=Math.max(0,Math.min(100,(dayNum/totalDays)*100));
+  // Build month labels
+  const months=[];
+  for(let d=0;d<totalDays;d+=30){
+    const dt=new Date(sowDate.getTime()+d*86400000);
+    months.push(dt.toLocaleDateString('en-IN',{month:'short'}));
+  }
+  let html=`<div class="card-title">📊 Season Timeline — ${data.label}</div>
+  <div class="gantt-wrap"><div class="gantt">
+    <div class="gantt-header">
+      <div class="gantt-label-col"></div>
+      <div class="gantt-days">${months.map(m=>`<div class="gantt-month">${m}</div>`).join('')}</div>
+    </div>`;
+  data.stages.forEach(s=>{
+    const left=(s.day/totalDays*100).toFixed(1);
+    const width=(s.dur/totalDays*100).toFixed(1);
+    html+=`<div class="gantt-row">
+      <div class="gantt-stage-label">${s.name}</div>
+      <div class="gantt-track">
+        <div class="gantt-bar" style="left:${left}%;width:${width}%;background:${s.color}" title="${s.tasks.join(' | ')}">${s.name}</div>
+        ${dayNum>=0&&dayNum<=totalDays?`<div class="today-line" style="left:${todayPct}%"></div>`:''}
+      </div>
+    </div>`;
+  });
+  html+=`</div></div>`;
+  el.innerHTML=html;
+}
+
+function renderMonth(data,dayNum,sowDate){
+  const el=document.getElementById('cal-card');
+  const today=new Date();
+  const year=today.getFullYear();
+  const month=today.getMonth();
+  const firstDay=new Date(year,month,1);
+  const lastDay=new Date(year,month+1,0);
+  const startDow=firstDay.getDay();
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html=`<div class="card-title">📅 ${today.toLocaleDateString('en-IN',{month:'long',year:'numeric'})} — ${data.label}</div>
+  <div class="month-header">${days.map(d=>`<div>${d}</div>`).join('')}</div>
+  <div class="month-grid">`;
+  // Blank cells
+  for(let i=0;i<startDow;i++)html+=`<div class="cal-day other-month"></div>`;
+  for(let d=1;d<=lastDay.getDate();d++){
+    const dt=new Date(year,month,d);
+    const dn=Math.floor((dt-sowDate)/86400000);
+    const isToday=dt.toDateString()===today.toDateString();
+    const stage=data.stages.find(s=>dn>=s.day&&dn<s.day+s.dur);
+    html+=`<div class="cal-day ${isToday?'today':''}" onclick="showDayDetail(${dn},'${data.label}')">
+      <div class="cal-day-num">${d}</div>
+      ${stage?`<div class="cal-day-stage" style="background:${stage.color}22;color:${stage.color}">${stage.name}</div>`:''}
+    </div>`;
+  }
+  html+=`</div>`;
+  el.innerHTML=html;
+}
+
+function showDayDetail(dayNum,cropLabel){
+  if(!activeCrops.length)return;
+  const c=activeCrops[activeCropIdx];
+  const data=CROP_CALENDAR[c.crop];
+  if(dayNum<0||dayNum>data.duration){alert(`Day ${dayNum}: Outside crop season.`);return;}
+  const stage=data.stages.find(s=>dayNum>=s.day&&dayNum<s.day+s.dur);
+  if(!stage){alert(`Day ${dayNum}: No stage data.`);return;}
+  alert(`Day ${dayNum} — ${stage.name}\n\nTasks:\n${stage.tasks.map(t=>'• '+t).join('\n')}\n\nWatch for:\n${stage.watch.map(w=>'⚠️ '+w).join('\n')}`);
+}
+
+// Init
+if(activeCrops.length)renderAll();
+</script>
