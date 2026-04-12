@@ -7,7 +7,7 @@
   // Create canvas
   const canvas = document.createElement('canvas');
   canvas.id = 'kr-three-bg';
-  canvas.style.cssText = 'position:fixed;inset:0;z-index:0;width:100%;height:100%;pointer-events:none;';
+  canvas.style.cssText = 'position:fixed;inset:0;z-index:-1;width:100%;height:100%;pointer-events:none;';
   canvas.setAttribute('aria-hidden', 'true');
   document.body.insertBefore(canvas, document.body.firstChild);
 
