@@ -55,11 +55,17 @@ function getSessionId() {
   return anon;
 }
 
-// ── Auth guard ────────────────────────────────────────────────────────────────
+// ── Auth guard (allows 1 anonymous scan) ─────────────────────────────────────
 (function authGuard() {
   const s = getSession();
   if (!s || !s.token) {
-    window.location.replace('login.html');
+    // Allow access for anonymous scan — home.html handles the gate after 1 scan
+    const anon = parseInt(localStorage.getItem('kr_anon_scans') || '0');
+    if (anon >= 1) {
+      // Already used free scan — redirect to login
+      window.location.replace('login.html');
+    }
+    // else: allow through for the free scan
   }
 })();
 
@@ -219,6 +225,64 @@ async function loadDailyTip() {
   }
 }
 
+// ── Image Quality Check ───────────────────────────────────────────────────────
+function checkImageQuality(file, callback) {
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    const w = img.naturalWidth, h = img.naturalHeight;
+    if (w < 224 || h < 224) {
+      callback({ status: 'bad', color: '#ef4444', msg: '❌ Image too small (min 224×224px) — use a closer shot' });
+      return;
+    }
+    const canvas = document.createElement('canvas');
+    const scale = Math.min(1, 200 / Math.max(w, h));
+    canvas.width = Math.round(w * scale);
+    canvas.height = Math.round(h * scale);
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let totalLum = 0, n = data.length / 4;
+    // Laplacian variance for blur
+    let sumSq = 0, sum = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const lum = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+      totalLum += lum;
+      sum += lum; sumSq += lum * lum;
+    }
+    const avgLum = totalLum / n;
+    const variance = (sumSq / n) - (sum / n) * (sum / n);
+
+    if (avgLum < 50) {
+      callback({ status: 'warn', color: '#f59e0b', msg: '⚠️ Image too dark — use natural daylight or a brighter area' });
+    } else if (avgLum > 220) {
+      callback({ status: 'warn', color: '#f59e0b', msg: '⚠️ Image overexposed — avoid direct sunlight on the leaf' });
+    } else if (variance < 80) {
+      callback({ status: 'warn', color: '#f59e0b', msg: '⚠️ Image may be blurry — hold camera steady and tap to focus' });
+    } else {
+      callback({ status: 'good', color: '#22c55e', msg: '✅ Good image quality — ready to analyze' });
+    }
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); callback({ status: 'good', color: '#22c55e', msg: '✅ Image loaded' }); };
+  img.src = url;
+}
+
+function renderQualityBar(result) {
+  let bar = document.getElementById('quality-bar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'quality-bar';
+    bar.style.cssText = 'margin-top:10px;padding:8px 12px;border-radius:10px;font-size:.78rem;font-weight:600;display:flex;align-items:center;gap:8px;transition:all .3s;';
+    const dz = document.getElementById('dz');
+    if (dz) dz.parentNode.insertBefore(bar, dz.nextSibling);
+  }
+  bar.style.background = result.color + '18';
+  bar.style.border = `1px solid ${result.color}44`;
+  bar.style.color = result.color;
+  bar.textContent = result.msg;
+}
+
 // ── Scan: file select ─────────────────────────────────────────────────────────
 function onFileSelect(file) {
   if (!file) return;
@@ -235,7 +299,12 @@ function onFileSelect(file) {
     preview.style.display = 'block';
   }
   if (empty) empty.style.display = 'none';
-  if (btnScan) btnScan.disabled = false;
+  if (btnScan) btnScan.disabled = true; // disable until quality check passes
+
+  checkImageQuality(file, result => {
+    renderQualityBar(result);
+    if (btnScan) btnScan.disabled = (result.status === 'bad');
+  });
 }
 
 // ── Scan: drag-drop ───────────────────────────────────────────────────────────
@@ -266,6 +335,17 @@ function syncMobNav(btn) {
 // ── Scan: run ─────────────────────────────────────────────────────────────────
 async function runScan() {
   if (!currentFile) return;
+
+  // Anonymous scan gate
+  const session = getSession();
+  if (!session || !session.token) {
+    const used = parseInt(localStorage.getItem('kr_anon_scans') || '0');
+    if (used >= 1) {
+      showLoginModal();
+      return;
+    }
+  }
+
   const progress = document.getElementById('scan-progress');
   const btnScan = document.getElementById('btn-scan');
   if (progress) progress.style.display = 'block';
@@ -279,7 +359,7 @@ async function runScan() {
   const fd = new FormData();
   fd.append('file', currentFile);
   fd.append('session_id', getSessionId());
-  fd.append('save_history', 'true');
+  fd.append('save_history', session ? 'true' : 'false');
 
   try {
     setProgress(30);
@@ -297,11 +377,28 @@ async function runScan() {
     setProgress(100);
     setStep('sp3', 'done');
 
+    // Track anonymous scan usage
+    if (!session || !session.token) {
+      localStorage.setItem('kr_anon_scans', '1');
+    }
+
     currentResult = data;
     saveLastDiagnosis(data.top_prediction);
     renderResult(data);
+
+    // Show "login to save" banner for anonymous users
+    if (!session || !session.token) {
+      showAnonBanner();
+    }
   } catch (err) {
-    alert('Scan failed: ' + (err.message || 'Unknown error'));
+    const errMsg = err.message || 'Unknown error';
+    const progress2 = document.getElementById('scan-progress');
+    if (progress2) progress2.style.display = 'none';
+    const errBanner = document.createElement('div');
+    errBanner.style.cssText = 'margin-top:12px;padding:12px 16px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:10px;color:#f87171;font-size:.83rem;';
+    errBanner.textContent = '❌ Scan failed: ' + errMsg;
+    document.getElementById('sec-scan')?.querySelector('.scan-hero')?.after(errBanner);
+    setTimeout(() => errBanner.remove(), 5000);
     if (btnScan) btnScan.disabled = false;
   } finally {
     setTimeout(() => {
@@ -309,6 +406,40 @@ async function runScan() {
       setProgress(0);
     }, 500);
   }
+}
+
+function showAnonBanner() {
+  const existing = document.getElementById('anon-banner');
+  if (existing) return;
+  const banner = document.createElement('div');
+  banner.id = 'anon-banner';
+  banner.style.cssText = 'margin-top:16px;padding:14px 18px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;';
+  banner.innerHTML = `
+    <div style="font-size:.85rem;color:#f0fdf4;">🌾 <strong>Login to save this result</strong>, get PDF reports, scan history & weather alerts</div>
+    <a href="login.html" style="padding:8px 18px;background:#22c55e;border-radius:8px;color:#0a1a0e;font-weight:700;font-size:.82rem;text-decoration:none;white-space:nowrap;">Login Free →</a>`;
+  document.getElementById('result-card')?.after(banner);
+}
+
+function showLoginModal() {
+  let modal = document.getElementById('login-gate-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'login-gate-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    modal.innerHTML = `
+      <div style="background:#0c1f12;border:1px solid rgba(34,197,94,.3);border-radius:20px;padding:32px;max-width:420px;width:100%;text-align:center;">
+        <div style="font-size:2.5rem;margin-bottom:12px;">🌾</div>
+        <h2 style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:10px;">You've used your free scan!</h2>
+        <p style="font-size:.85rem;color:rgba(134,239,172,.6);line-height:1.6;margin-bottom:20px;">Login to unlock unlimited scans, save history, get PDF reports, weather alerts and the Krishi Mitra AI advisor.</p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+          <a href="login.html" style="padding:11px 28px;background:#22c55e;border-radius:10px;color:#0a1a0e;font-weight:700;font-size:.9rem;text-decoration:none;">Login / Register Free</a>
+          <button onclick="document.getElementById('login-gate-modal').remove()" style="padding:11px 20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:rgba(240,253,242,.6);font-size:.85rem;cursor:pointer;">Maybe later</button>
+        </div>
+        <p style="font-size:.72rem;color:rgba(134,239,172,.3);margin-top:16px;">Join 12,847+ farmers already using Krishi Rakshak</p>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
 }
 
 // ── Scan: save to localStorage ────────────────────────────────────────────────
@@ -649,6 +780,8 @@ async function fetchWeather(lat, lng) {
     const res = await fetch(`${API}/weather?lat=${lat}&lng=${lng}`);
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
+    // Cache for AI context
+    try { sessionStorage.setItem('kr_weather_cache', JSON.stringify(data)); } catch {}
     renderWeather(data);
   } catch (err) {
     if (content) content.innerHTML = `<div style="color:#f87171;font-size:.85rem">Weather unavailable: ${escHtml(err.message)}</div>`;
@@ -712,15 +845,46 @@ async function loadMarket() {
   const content = document.getElementById('market-content');
   if (!content) return;
 
+  // Check sessionStorage cache (1 hour)
+  const cacheKey = `mandi_${crop}_${state}`;
+  const cached = (() => { try { const c = JSON.parse(sessionStorage.getItem(cacheKey)); if (c && Date.now() - c.ts < 3600000) return c.data; } catch {} return null; })();
+
+  if (cached) {
+    renderMarket(cached);
+    // Show stale badge if older than 30 min
+    const age = Date.now() - ((() => { try { return JSON.parse(sessionStorage.getItem(cacheKey)).ts; } catch { return Date.now(); } })());
+    if (age > 1800000) {
+      const badge = document.createElement('div');
+      badge.style.cssText = 'font-size:.72rem;color:#fbbf24;padding:6px 12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;margin-bottom:10px;';
+      badge.textContent = '⚠️ Data may be outdated — last fetched ' + Math.round(age / 60000) + ' min ago';
+      content.prepend(badge);
+    }
+    return;
+  }
+
   content.innerHTML = `<div style="overflow-x:auto"><table class="market-table"><thead><tr><th>Market</th><th>Min ₹</th><th>Max ₹</th><th>Modal ₹</th></tr></thead><tbody>${skeletonRows(5)}</tbody></table></div>`;
 
   try {
     const res = await fetch(`${API}/mandi-prices?crop=${encodeURIComponent(crop)}&state=${encodeURIComponent(state)}`);
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
+    // Cache result
+    try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch {}
+    // Cache best market for AI context
+    try { if (data.best_market) sessionStorage.setItem('kr_mandi_cache', JSON.stringify(data)); } catch {}
     renderMarket(data);
   } catch (err) {
-    content.innerHTML = `<div style="color:#f87171;font-size:.85rem">Market data unavailable: ${escHtml(err.message)}</div>`;
+    // Try stale cache on failure
+    const stale = (() => { try { return JSON.parse(sessionStorage.getItem(cacheKey))?.data; } catch { return null; } })();
+    if (stale) {
+      renderMarket(stale);
+      const badge = document.createElement('div');
+      badge.style.cssText = 'font-size:.72rem;color:#fbbf24;padding:6px 12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;margin-bottom:10px;';
+      badge.textContent = '⚠️ Showing cached data — live prices unavailable';
+      content.prepend(badge);
+    } else {
+      content.innerHTML = `<div style="color:#f87171;font-size:.85rem">Market data unavailable: ${escHtml(err.message)}</div>`;
+    }
   }
 }
 
@@ -729,6 +893,18 @@ function renderMarket(data) {
   if (!content) return;
   const markets = data.markets || data.records || [];
   const best = data.best_market || markets[0];
+
+  // Best time to sell recommendation based on trend
+  const risingCount = markets.filter(m => m.trend === 'rising').length;
+  const fallingCount = markets.filter(m => m.trend === 'falling').length;
+  let sellTip = '';
+  if (risingCount > fallingCount) {
+    sellTip = `<div style="padding:10px 14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:10px;font-size:.8rem;color:#4ade80;margin-bottom:14px;">📈 Prices are rising across most markets — <strong>good time to sell</strong> in the next 2–3 days.</div>`;
+  } else if (fallingCount > risingCount) {
+    sellTip = `<div style="padding:10px 14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px;font-size:.8rem;color:#fbbf24;margin-bottom:14px;">📉 Prices are falling — consider <strong>holding stock</strong> for 3–5 days or selling at the best market now.</div>`;
+  } else if (markets.length > 0) {
+    sellTip = `<div style="padding:10px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:10px;font-size:.8rem;color:rgba(134,239,172,.6);margin-bottom:14px;">→ Prices are stable — sell when transport costs are lowest (early morning).</div>`;
+  }
 
   const bestHtml = best ? `
     <div class="best-market-card">
@@ -756,6 +932,7 @@ function renderMarket(data) {
 
   content.innerHTML = `
     ${bestHtml}
+    ${sellTip}
     <div style="overflow-x:auto">
       <table class="market-table">
         <thead><tr><th>Market</th><th>Min ₹</th><th>Max ₹</th><th>Modal ₹</th></tr></thead>
@@ -882,6 +1059,8 @@ async function postForumQuestion() {
 }
 
 // ── History ───────────────────────────────────────────────────────────────────
+let historyItems = [];
+
 async function loadHistory() {
   const list = document.getElementById('history-list');
   if (!list) return;
@@ -890,35 +1069,120 @@ async function loadHistory() {
     const res = await fetch(`${API}/history/${getSessionId()}`);
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
-    // API returns { plants: [{plant_label, entries, trend, ...}] }
     const plants = data.plants || [];
-    const items = plants.flatMap(p => p.entries.map(e => ({ ...e, plant_label: p.plant_label })));
-    if (!items.length) {
-      list.innerHTML = '<div style="color:rgba(134,239,172,.4);font-size:.85rem">No scan history yet.</div>';
+    historyItems = plants.flatMap(p => p.entries.map(e => ({ ...e, plant_label: p.plant_label, trend: p.trend })));
+    if (!historyItems.length) {
+      list.innerHTML = '<div style="color:rgba(134,239,172,.4);font-size:.85rem">No scan history yet. Run your first scan to see results here.</div>';
       return;
     }
-    const sevColors = { healthy: '#22c55e', early: '#86efac', moderate: '#fbbf24', severe: '#ef4444' };
-    list.innerHTML = items.map(item => {
-      const sev = item.severity || 'moderate';
-      const color = sevColors[sev] || '#8b5cf6';
-      return `
-        <div class="forum-post-card">
-          <div style="display:flex;align-items:center;gap:12px">
-            ${item.image_url ? `<img src="${escHtml(item.image_url)}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0" alt=""/>` : '<div style="width:52px;height:52px;border-radius:8px;background:rgba(255,255,255,.05);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.4rem">🌿</div>'}
-            <div style="flex:1">
-              <div style="font-size:.88rem;font-weight:600;margin-bottom:4px">${escHtml(item.disease || item.display_name || '—')}</div>
-              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                <span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:99px;background:${color}22;color:${color};border:1px solid ${color}44">${sev.toUpperCase()}</span>
-                <span style="font-size:.72rem;color:rgba(134,239,172,.4)">${timeAgo(item.timestamp || item.created_at)}</span>
-                ${item.confidence != null ? `<span style="font-size:.72rem;font-family:'JetBrains Mono',monospace;color:#a8ff3e">${Math.round(item.confidence * 100)}%</span>` : ''}
-              </div>
-            </div>
-          </div>
-        </div>`;
-    }).join('');
+    renderHistoryList(historyItems);
   } catch (err) {
     list.innerHTML = `<div style="color:#f87171;font-size:.85rem">History unavailable: ${escHtml(err.message)}</div>`;
   }
+}
+
+function renderHistoryList(items) {
+  const list = document.getElementById('history-list');
+  if (!list) return;
+  const sevColors = { healthy: '#22c55e', early: '#86efac', moderate: '#fbbf24', severe: '#ef4444' };
+  const trendIcon = { improving: '📈 Improving', worsening: '📉 Worsening', stable: '→ Stable' };
+
+  // Filter bar
+  const filterHtml = `
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+      <button onclick="filterHistory('all',this)" style="padding:5px 14px;border-radius:99px;font-size:.72rem;font-weight:600;cursor:pointer;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:#4ade80;" class="hist-filter active">All</button>
+      <button onclick="filterHistory('severe',this)" style="padding:5px 14px;border-radius:99px;font-size:.72rem;font-weight:600;cursor:pointer;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:rgba(134,239,172,.5);" class="hist-filter">Severe only</button>
+      <button onclick="filterHistory('healthy',this)" style="padding:5px 14px;border-radius:99px;font-size:.72rem;font-weight:600;cursor:pointer;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:rgba(134,239,172,.5);" class="hist-filter">Healthy only</button>
+      <button onclick="filterHistory('week',this)" style="padding:5px 14px;border-radius:99px;font-size:.72rem;font-weight:600;cursor:pointer;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:rgba(134,239,172,.5);" class="hist-filter">Last 7 days</button>
+    </div>`;
+
+  const cards = items.map((item, idx) => {
+    const sev = item.severity || 'moderate';
+    const color = sevColors[sev] || '#8b5cf6';
+    const trend = item.trend ? `<span style="font-size:.68rem;color:rgba(134,239,172,.5)">${trendIcon[item.trend] || ''}</span>` : '';
+    return `
+      <div class="forum-post-card" onclick="openHistoryModal(${idx})" style="cursor:pointer;">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:52px;height:52px;border-radius:8px;background:rgba(255,255,255,.05);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.4rem">🌿</div>
+          <div style="flex:1">
+            <div style="font-size:.88rem;font-weight:600;margin-bottom:4px">${escHtml(item.disease || item.display_name || '—')}</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:99px;background:${color}22;color:${color};border:1px solid ${color}44">${sev.toUpperCase()}</span>
+              <span style="font-size:.72rem;color:rgba(134,239,172,.4)">${timeAgo(item.timestamp || item.created_at)}</span>
+              ${item.confidence != null ? `<span style="font-size:.72rem;font-family:'JetBrains Mono',monospace;color:#a8ff3e">${Math.round(item.confidence * 100)}%</span>` : ''}
+              ${trend}
+            </div>
+          </div>
+          <span style="color:rgba(134,239,172,.3);font-size:.9rem">›</span>
+        </div>
+      </div>`;
+  }).join('');
+
+  list.innerHTML = filterHtml + cards;
+}
+
+function filterHistory(type, btn) {
+  document.querySelectorAll('.hist-filter').forEach(b => {
+    b.style.background = 'rgba(255,255,255,.04)';
+    b.style.borderColor = 'rgba(255,255,255,.08)';
+    b.style.color = 'rgba(134,239,172,.5)';
+  });
+  btn.style.background = 'rgba(34,197,94,.15)';
+  btn.style.borderColor = 'rgba(34,197,94,.3)';
+  btn.style.color = '#4ade80';
+
+  let filtered = historyItems;
+  const now = Date.now();
+  if (type === 'severe') filtered = historyItems.filter(i => i.severity === 'severe');
+  else if (type === 'healthy') filtered = historyItems.filter(i => i.severity === 'healthy');
+  else if (type === 'week') filtered = historyItems.filter(i => now - new Date(i.timestamp || i.created_at).getTime() < 7 * 86400000);
+  renderHistoryList(filtered);
+}
+
+function openHistoryModal(idx) {
+  const item = historyItems[idx];
+  if (!item) return;
+  const sevColors = { healthy: '#22c55e', early: '#86efac', moderate: '#fbbf24', severe: '#ef4444' };
+  const color = sevColors[item.severity] || '#8b5cf6';
+  const treat = Array.isArray(item.treatment) ? item.treatment : (item.treatment ? [item.treatment] : []);
+  const symptoms = Array.isArray(item.symptoms) ? item.symptoms : [];
+  const prevention = Array.isArray(item.prevention) ? item.prevention : (item.prevention ? [item.prevention] : []);
+  const pct = item.confidence != null ? Math.round(item.confidence * 100) : '—';
+  const date = new Date(item.timestamp || item.created_at).toLocaleDateString('en-IN', { dateStyle: 'medium' });
+
+  // WhatsApp share text
+  const waText = `🌾 Krishi Rakshak Diagnosis\n\nCrop: ${item.crop || item.plant_label || '—'}\nDisease: ${item.disease || '—'}\nSeverity: ${(item.severity || '').toUpperCase()}\nConfidence: ${pct}%\nDate: ${date}\n\nTreatment: ${treat.slice(0,2).join('. ')}\n\n— Krishi Rakshak`;
+
+  let modal = document.getElementById('history-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'history-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9000;display:flex;align-items:flex-end;justify-content:center;padding:0;';
+    modal.onclick = e => { if (e.target === modal) modal.style.display = 'none'; };
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div style="background:#0c1f12;border:1px solid rgba(34,197,94,.2);border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;">Diagnosis Detail</span>
+        <button onclick="document.getElementById('history-modal').style.display='none'" style="background:none;border:none;color:rgba(134,239,172,.5);font-size:1.2rem;cursor:pointer;">✕</button>
+      </div>
+      <div style="background:${color}12;border:1.5px solid ${color}33;border-radius:14px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:.65rem;color:rgba(134,239,172,.5);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">${escHtml(item.crop || item.plant_label || 'Crop')}</div>
+        <div style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;margin-bottom:8px;">${escHtml(item.disease || '—')}</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <span style="font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:99px;background:${color}22;color:${color};border:1px solid ${color}44">${(item.severity || '').toUpperCase()}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:.85rem;color:#a8ff3e">${pct}% confidence</span>
+          <span style="font-size:.72rem;color:rgba(134,239,172,.4)">${date}</span>
+        </div>
+      </div>
+      ${symptoms.length ? `<div style="margin-bottom:14px;"><div style="font-size:.65rem;color:rgba(134,239,172,.45);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">⚠️ Symptoms</div>${symptoms.map(s => `<div style="padding:8px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px;margin-bottom:6px;font-size:.82rem;">${escHtml(s)}</div>`).join('')}</div>` : ''}
+      ${treat.length ? `<div style="margin-bottom:14px;"><div style="font-size:.65rem;color:rgba(134,239,172,.45);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">💊 Treatment</div>${treat.map(t => `<div style="padding:8px 12px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.15);border-radius:8px;margin-bottom:6px;font-size:.82rem;">✅ ${escHtml(t)}</div>`).join('')}</div>` : ''}
+      ${prevention.length ? `<div style="margin-bottom:16px;"><div style="font-size:.65rem;color:rgba(134,239,172,.45);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">🛡️ Prevention</div>${prevention.map(p => `<div style="padding:8px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px;margin-bottom:6px;font-size:.82rem;">${escHtml(p)}</div>`).join('')}</div>` : ''}
+      <button onclick="window.open('https://wa.me/?text=${encodeURIComponent(waText)}','_blank')" style="width:100%;padding:12px;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.3);border-radius:10px;color:#25d366;font-weight:600;font-size:.85rem;cursor:pointer;">📱 Share via WhatsApp</button>
+    </div>`;
+  modal.style.display = 'flex';
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -986,12 +1250,39 @@ function icHideTyping() { document.getElementById('ic-typing')?.remove(); }
 
 function icGetCtx() {
   try {
-    const d = JSON.parse(localStorage.getItem('kr_last_diagnosis'));
-    if (d) return `Farmer recently detected ${d.disease} with ${Math.round(d.confidence * 100)}% confidence`;
     const s = getSession();
-    if (s?.crop) return `Farmer grows ${s.crop}`;
+    const profile = (() => { try { return JSON.parse(localStorage.getItem('kr_farmer_profile')); } catch { return null; } })();
+    const diag = (() => { try { return JSON.parse(localStorage.getItem('kr_last_diagnosis')); } catch { return null; } })();
+    const weather = (() => { try { return JSON.parse(sessionStorage.getItem('kr_weather_cache')); } catch { return null; } })();
+    const mandi = (() => { try { return JSON.parse(sessionStorage.getItem('kr_mandi_cache')); } catch { return null; } })();
+
+    const crop = profile?.crops?.[0] || s?.crop || 'Unknown';
+    const location = profile?.state || s?.state || 'India';
+    let ctx = `Farmer's crop: ${crop}. Location: ${location}.`;
+    if (diag) ctx += ` Last scan: ${diag.disease} (${Math.round(diag.confidence * 100)}% confidence, ${diag.severity} severity) on ${new Date(diag.timestamp).toLocaleDateString('en-IN')}.`;
+    if (weather?.current) ctx += ` Today's weather: ${Math.round(weather.current.temperature)}°C, humidity ${weather.current.humidity_pct}%, rain ${weather.current.rain_prob_pct}%.`;
+    if (mandi?.best_market) ctx += ` Best mandi price for ${crop}: ₹${mandi.best_market.price}/quintal at ${mandi.best_market.name}.`;
+    return ctx;
+  } catch {
+    return 'Indian farmer';
+  }
+}
+
+function icGetSmartChips() {
+  const chips = [];
+  try {
+    const diag = JSON.parse(localStorage.getItem('kr_last_diagnosis'));
+    if (diag && diag.severity === 'severe') chips.push({ label: `💊 Treatment for ${diag.disease}`, msg: `What is the treatment for ${diag.disease}?` });
+    const weather = JSON.parse(sessionStorage.getItem('kr_weather_cache'));
+    if (weather?.current?.temperature > 38) chips.push({ label: '🌡️ Heat stress tips', msg: 'My crop is under heat stress, what should I do?' });
+    const s = getSession();
+    const profile = JSON.parse(localStorage.getItem('kr_farmer_profile') || '{}');
+    const crop = profile?.crops?.[0] || s?.crop;
+    if (crop) chips.push({ label: `💧 When to irrigate ${crop}?`, msg: `When should I irrigate my ${crop} crop?` });
   } catch {}
-  return 'Not specified';
+  chips.push({ label: '📋 Government schemes', msg: 'What government schemes are available for farmers?' });
+  chips.push({ label: '💰 Best time to sell', msg: 'When is the best time to sell my crop at mandi?' });
+  return chips.slice(0, 4);
 }
 
 async function icSend() {
@@ -1088,7 +1379,21 @@ function initInlineChat() {
   if (hist.length) {
     hist.slice(-10).forEach(m => icAddMsg(m.role === 'user' ? 'user' : 'bot', m.content));
   } else {
-    icAddMsg('bot', "Namaste! 🌱 I'm Krishi Mitra, your AI farm advisor. Ask me anything about crop diseases, fertilisers, weather, or government schemes.");
+    const s = getSession();
+    const profile = (() => { try { return JSON.parse(localStorage.getItem('kr_farmer_profile')); } catch { return null; } })();
+    const crop = profile?.crops?.[0] || s?.crop || '';
+    const greeting = crop
+      ? `Namaste! 🌱 I'm Krishi Mitra. I can see you grow ${crop}. Ask me about diseases, fertilisers, weather, or government schemes.`
+      : "Namaste! 🌱 I'm Krishi Mitra, your AI farm advisor. Ask me anything about crop diseases, fertilisers, weather, or government schemes.";
+    icAddMsg('bot', greeting);
+  }
+  // Render smart chips
+  const chipsEl = document.querySelector('#sec-chat .ic-chip')?.parentElement;
+  if (chipsEl) {
+    const smartChips = icGetSmartChips();
+    chipsEl.innerHTML = smartChips.map(c =>
+      `<button class="ic-chip" onclick="icChip('${c.msg.replace(/'/g,"\\'")}')">` + c.label + `</button>`
+    ).join('');
   }
 }
 
