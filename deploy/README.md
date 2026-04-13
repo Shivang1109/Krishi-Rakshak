@@ -102,10 +102,11 @@ Then rebuild: `docker compose up -d --build`
 
 | Component | URL |
 |---|---|
-| Backend API | `http://EC2_IP:8000` |
-| API Docs | `http://EC2_IP:8000/docs` |
-| Health Check | `http://EC2_IP:8000/health` |
-| Frontend | `http://BUCKET.s3-website.ap-south-1.amazonaws.com` |
+| Frontend (CloudFront) | `https://d3bsxgl8cuk253.cloudfront.net` |
+| Backend (CloudFront) | `https://d2edjmigl4cl66.cloudfront.net` |
+| Backend EC2 direct | `http://13.201.134.130:8000` |
+| API Docs | `https://d2edjmigl4cl66.cloudfront.net/docs` |
+| Health Check | `https://d2edjmigl4cl66.cloudfront.net/health` |
 
 ## Estimated Cost
 | Service | Cost |

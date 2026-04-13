@@ -12,6 +12,14 @@ Diagnose crop diseases in under 2 seconds · 54 diseases · 9 crops · Multiling
 [![Flutter](https://img.shields.io/badge/Flutter-Mobile-02569B?style=flat&logo=flutter&logoColor=white)](https://flutter.dev)
 [![PWA](https://img.shields.io/badge/PWA-Ready-5A0FC8?style=flat&logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
 
+### 🚀 Live Demo
+
+| | URL |
+|---|---|
+| 🌐 **Frontend** | [https://d3bsxgl8cuk253.cloudfront.net](https://d3bsxgl8cuk253.cloudfront.net) |
+| ⚙️ **Backend API** | [https://d2edjmigl4cl66.cloudfront.net](https://d2edjmigl4cl66.cloudfront.net) |
+| 📦 **GitHub** | [https://github.com/Shivang1109/Krishi-Rakshak](https://github.com/Shivang1109/Krishi-Rakshak) |
+
 </div>
 
 ---
