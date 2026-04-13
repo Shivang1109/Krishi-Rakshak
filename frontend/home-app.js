@@ -459,32 +459,197 @@ function saveLastDiagnosis(top) {
 const SEV_COLORS = { healthy: '#22c55e', early: '#86efac', moderate: '#fbbf24', severe: '#ef4444' };
 const SEV_LABELS = { healthy: 'Healthy ✓', early: 'Early Stage', moderate: 'Moderate', severe: 'Severe ⚠' };
 
+// ── First-line treatment map (FIX 2) ─────────────────────────────────────────
+const IMMEDIATE_ACTION = {
+  // Banana
+  'banana_cordana':        { action: 'Apply Mancozeb 75% WP @ 2.5g/L or Carbendazim 50% WP @ 1g/L. Spray every 10 days.', days: 3 },
+  'banana_pestalotiopsis': { action: 'Apply Copper Oxychloride 50% WP @ 3g/L. Remove infected leaves immediately.', days: 2 },
+  'banana_sigatoka':       { action: 'Apply Propiconazole 25% EC @ 1ml/L or Tridemorph 80% EC @ 0.5ml/L. Spray fortnightly.', days: 3 },
+  // Chilli
+  'chilli_anthracnose':    { action: 'Apply Carbendazim 50% WP @ 1g/L + Mancozeb 75% WP @ 2g/L. Repeat after 7 days.', days: 2 },
+  'chilli_leaf_curl_virus':{ action: 'Control whitefly vector with Imidacloprid 17.8% SL @ 0.3ml/L. Remove infected plants.', days: 1 },
+  'chilli_leaf_spot':      { action: 'Apply Copper Hydroxide 77% WP @ 2g/L. Avoid overhead irrigation.', days: 3 },
+  // Corn/Maize
+  'corn_gray_leaf_spot':   { action: 'Apply Azoxystrobin 23% SC @ 1ml/L or Propiconazole 25% EC @ 1ml/L. Spray at first sign.', days: 3 },
+  'corn_common_rust':      { action: 'Apply Mancozeb 75% WP @ 2.5g/L. Spray in early morning. Repeat after 10 days.', days: 3 },
+  'corn_northern_blight':  { action: 'Apply Propiconazole 25% EC @ 1ml/L or Tebuconazole 250 EW @ 1ml/L. Two sprays 14 days apart.', days: 3 },
+  // Mango
+  'mango_anthracnose':     { action: 'Apply Carbendazim 50% WP @ 1g/L or Copper Oxychloride 50% WP @ 3g/L. Spray at fruit set.', days: 3 },
+  'mango_powdery_mildew':  { action: 'Apply Wettable Sulphur 80% WP @ 3g/L or Hexaconazole 5% SC @ 2ml/L. Spray at flowering.', days: 2 },
+  'mango_bacterial_canker':{ action: 'Apply Copper Oxychloride 50% WP @ 3g/L. Prune infected branches 15cm below lesion.', days: 1 },
+  // Paddy
+  'paddy_blast':           { action: 'Apply Tricyclazole 75% WP @ 0.6g/L or Isoprothiolane 40% EC @ 1.5ml/L. Spray immediately.', days: 1 },
+  'paddy_bacterial_leaf_blight': { action: 'Apply Copper Oxychloride 50% WP @ 3g/L. Drain field and avoid excess N fertiliser.', days: 2 },
+  'paddy_brown_spot':      { action: 'Apply Mancozeb 75% WP @ 2.5g/L or Edifenphos 50% EC @ 1ml/L. Spray at boot stage.', days: 3 },
+  'paddy_hispa':           { action: 'Apply Chlorpyrifos 20% EC @ 2ml/L or Monocrotophos 36% SL @ 1.5ml/L. Clip leaf tips.', days: 2 },
+  // Potato
+  'potato_early_blight':   { action: 'Apply Mancozeb 75% WP @ 2.5g/L or Chlorothalonil 75% WP @ 2g/L. Spray every 7-10 days.', days: 3 },
+  'potato_late_blight':    { action: 'Apply Metalaxyl 8% + Mancozeb 64% WP @ 2.5g/L IMMEDIATELY. This spreads fast.', days: 1 },
+  // Sugarcane
+  'sugarcane_red_rot':     { action: 'Destroy infected stools. Treat setts with Carbendazim 50% WP @ 1g/L for 30 min before planting.', days: 1 },
+  'sugarcane_woolly_aphid':{ action: 'Apply Chlorpyrifos 20% EC @ 2ml/L or release Aphelinus mali parasitoid. Avoid water stress.', days: 2 },
+  // Tomato
+  'tomato_early_blight':   { action: 'Apply Mancozeb 75% WP @ 2.5g/L or Chlorothalonil 75% WP @ 2g/L. Spray every 7 days.', days: 3 },
+  'tomato_late_blight':    { action: 'Apply Metalaxyl 8% + Mancozeb 64% WP @ 2.5g/L. Remove infected plants. Spray every 5 days.', days: 1 },
+  'tomato_leaf_mold':      { action: 'Apply Copper Hydroxide 77% WP @ 2g/L. Improve ventilation. Avoid wetting foliage.', days: 3 },
+  'tomato_bacterial_spot': { action: 'Apply Copper Oxychloride 50% WP @ 3g/L. Avoid overhead irrigation. Remove infected leaves.', days: 2 },
+  'tomato_septoria_leaf_spot': { action: 'Apply Mancozeb 75% WP @ 2.5g/L or Chlorothalonil 75% WP @ 2g/L. Mulch around plants.', days: 3 },
+  // Wheat
+  'wheat_brown_rust':      { action: 'Apply Propiconazole 25% EC @ 0.1% or Tebuconazole 250 EW @ 1ml/L. Spray in early morning. Repeat after 15 days.', days: 2 },
+  'wheat_yellow_rust':     { action: 'Apply Propiconazole 25% EC @ 1ml/L or Hexaconazole 5% SC @ 2ml/L. Act fast — spreads rapidly.', days: 1 },
+};
+
+function getImmediateAction(diseaseName) {
+  const key = (diseaseName || '').toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_');
+  // Try exact match first, then partial
+  if (IMMEDIATE_ACTION[key]) return IMMEDIATE_ACTION[key];
+  for (const k of Object.keys(IMMEDIATE_ACTION)) {
+    if (key.includes(k.split('_')[1]) || k.includes(key.split('_').slice(1).join('_'))) {
+      return IMMEDIATE_ACTION[k];
+    }
+  }
+  return null;
+}
+
+// ── Heatmap overlay (FIX 3) ──────────────────────────────────────────────────
+let heatmapVisible = false;
+
+function buildHeatmap(imgEl) {
+  const existing = document.getElementById('heatmap-canvas');
+  if (existing) { existing.remove(); heatmapVisible = false; return; }
+
+  const canvas = document.createElement('canvas');
+  canvas.id = 'heatmap-canvas';
+  canvas.width = imgEl.naturalWidth || imgEl.width;
+  canvas.height = imgEl.naturalHeight || imgEl.height;
+  canvas.style.cssText = `position:absolute;inset:0;width:100%;height:100%;border-radius:14px;pointer-events:none;`;
+
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+
+  // Draw source image to sample pixels
+  const tmp = document.createElement('canvas');
+  tmp.width = w; tmp.height = h;
+  tmp.getContext('2d').drawImage(imgEl, 0, 0, w, h);
+  const pixels = tmp.getContext('2d').getImageData(0, 0, w, h).data;
+
+  // Find high-saturation regions (disease spots = color anomalies)
+  const gridW = 8, gridH = 8;
+  const cellW = w / gridW, cellH = h / gridH;
+  let maxSat = 0, hotspots = [];
+
+  for (let gy = 0; gy < gridH; gy++) {
+    for (let gx = 0; gx < gridW; gx++) {
+      let satSum = 0, count = 0;
+      const x0 = Math.floor(gx * cellW), y0 = Math.floor(gy * cellH);
+      const x1 = Math.floor((gx + 1) * cellW), y1 = Math.floor((gy + 1) * cellH);
+      for (let y = y0; y < y1; y += 2) {
+        for (let x = x0; x < x1; x += 2) {
+          const i = (y * w + x) * 4;
+          const r = pixels[i] / 255, g = pixels[i+1] / 255, b = pixels[i+2] / 255;
+          const max = Math.max(r, g, b), min = Math.min(r, g, b);
+          satSum += max === 0 ? 0 : (max - min) / max;
+          count++;
+        }
+      }
+      const avgSat = count ? satSum / count : 0;
+      if (avgSat > maxSat) maxSat = avgSat;
+      hotspots.push({ cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, sat: avgSat });
+    }
+  }
+
+  // Draw top 3 hotspots as ellipses
+  hotspots.sort((a, b) => b.sat - a.sat);
+  const top3 = hotspots.slice(0, 3);
+  top3.forEach((hs, i) => {
+    const alpha = 0.35 - i * 0.08;
+    const rx = cellW * 1.2, ry = cellH * 1.2;
+    const grad = ctx.createRadialGradient(hs.cx, hs.cy, 0, hs.cx, hs.cy, Math.max(rx, ry));
+    grad.addColorStop(0, `rgba(239,68,68,${alpha})`);
+    grad.addColorStop(0.5, `rgba(251,146,60,${alpha * 0.6})`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.save();
+    ctx.scale(1, ry / rx);
+    ctx.beginPath();
+    ctx.arc(hs.cx, hs.cy * (rx / ry), rx, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // Label
+  ctx.fillStyle = 'rgba(239,68,68,0.9)';
+  ctx.font = `bold ${Math.max(10, w * 0.04)}px sans-serif`;
+  ctx.fillText('AI Focus Areas', 8, Math.max(16, w * 0.05));
+
+  imgEl.parentElement.style.position = 'relative';
+  imgEl.parentElement.appendChild(canvas);
+  heatmapVisible = true;
+}
+
+function toggleHeatmap() {
+  const imgEl = document.getElementById('rc-img');
+  const btn = document.getElementById('heatmap-btn');
+  if (!imgEl || !imgEl.src || imgEl.src === window.location.href) return;
+  buildHeatmap(imgEl);
+  if (btn) btn.textContent = heatmapVisible ? '🔍 Hide AI Focus' : '🔍 Show AI Focus Area';
+}
+
+// ── Crop profile update toast (FIX 4) ────────────────────────────────────────
+function showCropUpdateToast(detectedCrop) {
+  if (!detectedCrop) return;
+  localStorage.setItem('kr_last_scanned_crop', detectedCrop);
+  const s = getSession();
+  const profile = (() => { try { return JSON.parse(localStorage.getItem('kr_farmer_profile')); } catch { return null; } })();
+  const currentCrop = profile?.crops?.[0] || s?.crop || '';
+  if (currentCrop.toLowerCase() === detectedCrop.toLowerCase()) return; // already matches
+
+  const toast = document.createElement('div');
+  toast.id = 'crop-toast';
+  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#0c1f12;border:1px solid rgba(34,197,94,.3);border-radius:12px;padding:12px 18px;display:flex;align-items:center;gap:12px;z-index:8000;box-shadow:0 8px 32px rgba(0,0,0,.4);font-size:.82rem;white-space:nowrap;';
+  toast.innerHTML = `
+    <span style="color:#f0fdf4;">🌱 Crop detected: <strong>${escHtml(detectedCrop)}</strong> — update your profile?</span>
+    <button onclick="updateProfileCrop('${escHtml(detectedCrop)}')" style="padding:5px 12px;background:#22c55e;border:none;border-radius:7px;color:#0a1a0e;font-weight:700;font-size:.78rem;cursor:pointer;">Yes</button>
+    <button onclick="document.getElementById('crop-toast')?.remove()" style="padding:5px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:7px;color:rgba(240,253,242,.5);font-size:.78rem;cursor:pointer;">Skip</button>`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 8000);
+}
+
+function updateProfileCrop(crop) {
+  try {
+    const profile = JSON.parse(localStorage.getItem('kr_farmer_profile') || '{}');
+    profile.crops = [crop];
+    localStorage.setItem('kr_farmer_profile', JSON.stringify(profile));
+    const sbCrop = document.getElementById('sb-crop');
+    if (sbCrop) sbCrop.textContent = crop;
+  } catch {}
+  document.getElementById('crop-toast')?.remove();
+}
+
 function renderResult(data) {
   const top = data.top_prediction;
   const sev = top.confidence_severity || top.graded_severity || 'moderate';
   const pct = Math.round(top.confidence * 100);
   const color = SEV_COLORS[sev] || '#8b5cf6';
   const label = SEV_LABELS[sev] || sev.toUpperCase();
+  const cropName = top.crop || 'Unknown Crop';
 
   // Banner
   const banner = document.getElementById('rc-banner');
-  if (banner) {
-    banner.className = 'rc-banner sev-' + sev;
-    banner.style.color = color;
-  }
+  if (banner) { banner.className = 'rc-banner sev-' + sev; banner.style.color = color; }
 
   // Image + badge
   const rcImg = document.getElementById('rc-img');
   const rcBadge = document.getElementById('rc-img-badge');
-  if (rcImg && currentFile) rcImg.src = URL.createObjectURL(currentFile);
-  if (rcBadge) {
-    rcBadge.textContent = label;
-    rcBadge.style.cssText = `background:${color};color:#0a1a0e;`;
+  if (rcImg && currentFile) {
+    rcImg.src = URL.createObjectURL(currentFile);
+    rcImg.onload = () => { heatmapVisible = false; document.getElementById('heatmap-canvas')?.remove(); };
   }
+  if (rcBadge) { rcBadge.textContent = label; rcBadge.style.cssText = `background:${color};color:#0a1a0e;`; }
 
   // Crop tag
   const cropTag = document.getElementById('rc-crop-tag');
-  if (cropTag) cropTag.textContent = (top.crop || 'Unknown Crop').toUpperCase() + ' · AI DIAGNOSIS';
+  if (cropTag) cropTag.textContent = cropName.toUpperCase() + ' · AI DIAGNOSIS';
 
   // Name + desc
   const rcName = document.getElementById('rc-name');
@@ -492,37 +657,104 @@ function renderResult(data) {
   if (rcName) rcName.textContent = top.display_name;
   if (rcDesc) rcDesc.textContent = top.description || '';
 
-  // Confidence
+  // FIX 1: Confidence bar always BLUE, label = "AI ACCURACY"
   const rcConfFill = document.getElementById('rc-conf-fill');
   const rcConfPct = document.getElementById('rc-conf-pct');
-  if (rcConfFill) {
-    rcConfFill.style.width = pct + '%';
-    rcConfFill.style.background = `linear-gradient(90deg, ${color}, ${color}cc)`;
-  }
-  if (rcConfPct) {
-    rcConfPct.textContent = pct + '%';
-    rcConfPct.style.color = color;
+  const rcConfText = document.querySelector('.rc-conf-text');
+  if (rcConfFill) { rcConfFill.style.width = pct + '%'; rcConfFill.style.background = 'linear-gradient(90deg,#3b82f6,#60a5fa)'; }
+  if (rcConfPct) { rcConfPct.textContent = pct + '% accurate'; rcConfPct.style.color = '#60a5fa'; }
+  if (rcConfText) rcConfText.innerHTML = 'AI ACCURACY <span title="This shows how confident the AI is in its identification, not how severe the disease is" style="cursor:help;opacity:.6">ℹ️</span>';
+
+  // FIX 2: Immediate action banner
+  const immAction = getImmediateAction(top.display_name);
+  let immHtml = '';
+  if (sev !== 'healthy' && immAction) {
+    const bgMap = { severe: '#7f1d1d', moderate: '#78350f', early: '#1c3a1c' };
+    const bdMap = { severe: '#ef4444', moderate: '#f59e0b', early: '#22c55e' };
+    const bg = bgMap[sev] || '#1c3a1c';
+    const bd = bdMap[sev] || '#22c55e';
+    const icon = sev === 'severe' ? '⚡ IMMEDIATE ACTION REQUIRED' : '✅ RECOMMENDED ACTION';
+    immHtml = `
+      <div id="imm-action-banner" style="margin-bottom:14px;padding:14px 16px;background:${bg};border-left:4px solid ${bd};border-radius:0 10px 10px 0;border:1px solid ${bd}33;border-left:4px solid ${bd};">
+        <div style="font-size:.68rem;font-weight:800;color:${bd};text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">${icon}</div>
+        <div style="font-size:.83rem;color:#f0fdf4;line-height:1.6;margin-bottom:10px;">${escHtml(immAction.action)}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <span style="font-size:.72rem;color:rgba(240,253,242,.5);">⏱️ Apply within ${immAction.days} day${immAction.days > 1 ? 's' : ''}</span>
+          <a href="https://www.google.com/maps/search/agricultural+store+near+me" target="_blank" rel="noopener" style="padding:5px 12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:7px;color:#f0fdf4;font-size:.72rem;text-decoration:none;">📍 Find nearest agro store</a>
+        </div>
+      </div>`;
   }
 
-  // WhatsApp share
+  // FIX 3: Heatmap toggle button (inject into image wrap)
+  setTimeout(() => {
+    const wrap = document.querySelector('.rc-img-wrap');
+    if (wrap && !document.getElementById('heatmap-btn')) {
+      const btn = document.createElement('button');
+      btn.id = 'heatmap-btn';
+      btn.textContent = '🔍 Show AI Focus Area';
+      btn.style.cssText = 'position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);white-space:nowrap;padding:3px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:99px;color:rgba(134,239,172,.6);font-size:.65rem;cursor:pointer;';
+      btn.onclick = toggleHeatmap;
+      wrap.style.paddingBottom = '32px';
+      wrap.appendChild(btn);
+    }
+  }, 100);
+
+  // FIX 6: Improved WhatsApp message
   const waBtn = document.getElementById('rc-wa');
   if (waBtn) {
-    const treat = Array.isArray(top.treatment) ? top.treatment.slice(0, 3).join('\n') : (top.treatment || '');
-    const waText = `🌾 Krishi Rakshak Diagnosis\n\nDisease: ${top.display_name}\nSeverity: ${label}\nConfidence: ${pct}%\n\nTreatment:\n${treat}\n\nKrishi Rakshak AI — Free for Indian Farmers`;
+    const treat = Array.isArray(top.treatment) ? top.treatment.slice(0, 2).join('\n• ') : (top.treatment || '');
+    const immLine = immAction ? immAction.action : treat;
+    const waText = `🌾 *Krishi Rakshak Diagnosis Report*\n━━━━━━━━━━━━━━━\n🌿 Crop: ${cropName}\n🦠 Disease: ${top.display_name}\n⚠️ Severity: ${label}\n🎯 AI Accuracy: ${pct}%\n📅 Date: ${new Date().toLocaleDateString('en-IN')}\n\n💊 *Immediate Treatment:*\n${immLine}\n\n🔗 Diagnosed by Krishi Rakshak AI — Free for Indian Farmers\n━━━━━━━━━━━━━━━`;
     waBtn.onclick = () => window.open('https://wa.me/?text=' + encodeURIComponent(waText), '_blank');
   }
 
+  // Inject immediate action banner before tabs
+  const tabsEl = document.querySelector('.rc-tabs');
+  const existingImm = document.getElementById('imm-action-banner');
+  if (existingImm) existingImm.remove();
+  if (immHtml && tabsEl) tabsEl.insertAdjacentHTML('beforebegin', immHtml);
+
   const card = document.getElementById('result-card');
-  if (card) {
-    card.classList.add('show');
-    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
+  if (card) { card.classList.add('show'); card.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+
+  // FIX 4: Crop profile update toast
+  setTimeout(() => showCropUpdateToast(cropName), 1500);
 
   // Default tab
   rcTab(document.querySelector('.rc-tab'), 'symptoms');
 }
 
-// ── Scan: tab switcher ────────────────────────────────────────────────────────
+// ── Scan: tab switcher (FIX 5) ───────────────────────────────────────────────
+const DISEASE_PEAK_MONTHS = {
+  'blast': [6,7,8,9], 'blight': [7,8,9,10], 'rust': [10,11,12,1,2],
+  'mildew': [3,4,5,10,11], 'spot': [7,8,9], 'rot': [6,7,8],
+  'anthracnose': [6,7,8,9], 'sigatoka': [7,8,9,10], 'hispa': [7,8,9],
+};
+
+function getPeakMonths(diseaseName) {
+  const d = (diseaseName || '').toLowerCase();
+  for (const [key, months] of Object.entries(DISEASE_PEAK_MONTHS)) {
+    if (d.includes(key)) return months;
+  }
+  return [7, 8, 9];
+}
+
+const TREATMENT_PRODUCTS = {
+  'blast':     [{ name:'Tricyclazole 75% WP', dose:'0.6g/L', price:'₹180-220/acre', link:'Tricyclazole' }, { name:'Isoprothiolane 40% EC', dose:'1.5ml/L', price:'₹150-180/acre', link:'Isoprothiolane' }],
+  'blight':    [{ name:'Metalaxyl+Mancozeb WP', dose:'2.5g/L', price:'₹200-250/acre', link:'Metalaxyl+Mancozeb' }, { name:'Chlorothalonil 75% WP', dose:'2g/L', price:'₹120-150/acre', link:'Chlorothalonil' }],
+  'rust':      [{ name:'Propiconazole 25% EC', dose:'1ml/L', price:'₹160-200/acre', link:'Propiconazole' }, { name:'Tebuconazole 250 EW', dose:'1ml/L', price:'₹180-220/acre', link:'Tebuconazole' }],
+  'mildew':    [{ name:'Wettable Sulphur 80% WP', dose:'3g/L', price:'₹80-100/acre', link:'Wettable+Sulphur' }, { name:'Hexaconazole 5% SC', dose:'2ml/L', price:'₹140-170/acre', link:'Hexaconazole' }],
+  'default':   [{ name:'Mancozeb 75% WP', dose:'2.5g/L', price:'₹100-130/acre', link:'Mancozeb' }, { name:'Carbendazim 50% WP', dose:'1g/L', price:'₹120-150/acre', link:'Carbendazim' }, { name:'Copper Oxychloride 50% WP', dose:'3g/L', price:'₹90-120/acre', link:'Copper+Oxychloride' }],
+};
+
+function getProducts(diseaseName) {
+  const d = (diseaseName || '').toLowerCase();
+  for (const [key, prods] of Object.entries(TREATMENT_PRODUCTS)) {
+    if (key !== 'default' && d.includes(key)) return prods;
+  }
+  return TREATMENT_PRODUCTS.default;
+}
+
 function rcTab(btn, tab) {
   document.querySelectorAll('.rc-tab').forEach(t => t.classList.remove('active'));
   if (btn) btn.classList.add('active');
@@ -531,34 +763,112 @@ function rcTab(btn, tab) {
   if (!content || !currentResult) return;
 
   const top = currentResult.top_prediction;
-  let items = [];
-  let icon = '•';
+  const diseaseName = top.display_name || '';
 
   switch (tab) {
-    case 'symptoms':
-      items = Array.isArray(top.symptoms) ? top.symptoms : (top.symptoms ? [top.symptoms] : []);
-      icon = '⚠️';
+    case 'symptoms': {
+      const items = Array.isArray(top.symptoms) ? top.symptoms : (top.symptoms ? [top.symptoms] : []);
+      const sev = top.confidence_severity || top.graded_severity || 'moderate';
+      const stageMap = { healthy: 'None', early: 'Early', moderate: 'Mid', severe: 'Advanced' };
+      const stageColor = { healthy: '#22c55e', early: '#86efac', moderate: '#fbbf24', severe: '#ef4444' };
+      const stageBadge = `<div style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:${stageColor[sev]}18;border:1px solid ${stageColor[sev]}44;border-radius:99px;font-size:.7rem;font-weight:600;color:${stageColor[sev]};margin-bottom:12px;">Stage of infection visible: ${stageMap[sev] || 'Unknown'}</div>`;
+      if (!items.length) { content.innerHTML = stageBadge + '<div style="color:rgba(134,239,172,.4);font-size:.83rem">No symptom data available.</div>'; return; }
+      content.innerHTML = stageBadge + items.map((item, i) => {
+        const icon = i < Math.ceil(items.length / 2) ? '🔴' : '🟡';
+        return `<div class="rc-list-item"><span class="ri-icon">${icon}</span><span>${escHtml(item)}</span></div>`;
+      }).join('');
       break;
-    case 'treatment':
-      items = Array.isArray(top.treatment) ? top.treatment : (top.treatment ? [top.treatment] : []);
-      icon = '✅';
+    }
+    case 'treatment': {
+      const items = Array.isArray(top.treatment) ? top.treatment : (top.treatment ? [top.treatment] : []);
+      const timings = ['Within 24 hours', 'Days 3–7', 'Day 14–15'];
+      const costs = ['₹100–150/acre', '₹150–200/acre', '₹100–150/acre'];
+      const stepperHtml = items.length ? `
+        <div style="display:flex;gap:0;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;">
+          ${items.slice(0, 3).map((step, i) => `
+            <div style="flex:1;min-width:140px;padding:12px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.15);border-radius:${i===0?'10px 0 0 10px':i===items.slice(0,3).length-1?'0 10px 10px 0':'0'};border-right:${i<items.slice(0,3).length-1?'none':'1px solid rgba(34,197,94,.15)'};">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(134,239,172,.4);margin-bottom:4px;">STEP ${i+1}</div>
+              <div style="font-size:.8rem;color:#f0fdf4;line-height:1.5;margin-bottom:8px;">${escHtml(step)}</div>
+              <div style="font-size:.68rem;color:rgba(134,239,172,.5);">⏱️ ${timings[i] || 'As needed'}</div>
+              <div style="font-size:.68rem;color:rgba(134,239,172,.4);">💰 ${costs[i] || '₹100–200/acre'}</div>
+            </div>`).join('<div style="width:1px;background:rgba(34,197,94,.2);flex-shrink:0;"></div>')}
+        </div>` : '';
+
+      const products = getProducts(diseaseName);
+      const productsHtml = `
+        <div style="font-size:.65rem;color:rgba(134,239,172,.45);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Recommended Products</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          ${products.map(p => `
+            <div style="padding:12px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <div style="flex:1;min-width:140px;">
+                <div style="font-size:.83rem;font-weight:600;margin-bottom:2px;">${escHtml(p.name)}</div>
+                <div style="font-size:.72rem;color:rgba(134,239,172,.5);">Dose: ${escHtml(p.dose)} · ${escHtml(p.price)}</div>
+              </div>
+              <a href="https://www.agrostar.in/search?q=${encodeURIComponent(p.link)}" target="_blank" rel="noopener" style="padding:5px 12px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);border-radius:7px;color:#4ade80;font-size:.72rem;text-decoration:none;white-space:nowrap;">🛒 AgroStar</a>
+            </div>`).join('')}
+        </div>`;
+
+      content.innerHTML = stepperHtml + productsHtml;
       break;
-    case 'prevention':
-      items = Array.isArray(top.prevention) ? top.prevention : (top.prevention ? [top.prevention] : []);
-      icon = '🛡️';
+    }
+    case 'prevention': {
+      const items = Array.isArray(top.prevention) ? top.prevention : (top.prevention ? [top.prevention] : []);
+      const peakMonths = getPeakMonths(diseaseName);
+      const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const calHtml = `
+        <div style="margin-bottom:14px;">
+          <div style="font-size:.65rem;color:rgba(134,239,172,.45);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Peak Disease Season</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">
+            ${monthNames.map((m, i) => {
+              const isPeak = peakMonths.includes(i + 1);
+              return `<div style="padding:4px 8px;border-radius:6px;font-size:.68rem;font-weight:${isPeak?'700':'400'};background:${isPeak?'rgba(239,68,68,.15)':'rgba(255,255,255,.03)'};border:1px solid ${isPeak?'rgba(239,68,68,.3)':'rgba(255,255,255,.06)'};color:${isPeak?'#f87171':'rgba(134,239,172,.35)'};">${m}</div>`;
+            }).join('')}
+          </div>
+        </div>`;
+
+      const listHtml = items.map(i => `<div class="rc-list-item"><span class="ri-icon">🛡️</span><span>${escHtml(i)}</span></div>`).join('');
+
+      const reminderHtml = `
+        <button onclick="setDiseaseReminder('${escHtml(diseaseName)}')" style="margin-top:12px;padding:8px 16px;background:rgba(168,255,62,.08);border:1px solid rgba(168,255,62,.2);border-radius:8px;color:#a8ff3e;font-size:.78rem;cursor:pointer;width:100%;">
+          🔔 Set reminder before peak season
+        </button>`;
+
+      content.innerHTML = calHtml + (listHtml || '<div style="color:rgba(134,239,172,.4);font-size:.83rem">No prevention data.</div>') + reminderHtml;
       break;
+    }
     case 'alts': {
       const alts = currentResult.top_k || [];
-      content.innerHTML = alts.length
-        ? alts.map(a => `<div class="rc-list-item"><span>${escHtml(a.display_name)}</span><span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:#a8ff3e">${a.confidence_pct || Math.round(a.confidence * 100) + '%'}</span></div>`).join('')
-        : '<div style="color:rgba(134,239,172,.4);font-size:.83rem">No alternatives available.</div>';
-      return;
+      const pct = currentResult.top_prediction?.confidence ? Math.round(currentResult.top_prediction.confidence * 100) : 100;
+      const lowConfBanner = pct < 75 ? `<div style="padding:10px 14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px;font-size:.78rem;color:#fbbf24;margin-bottom:12px;">⚠️ Confidence below 75% — try scanning again with better lighting for a more accurate result.<br/><button onclick="resetScan()" style="margin-top:6px;padding:4px 12px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:#fbbf24;font-size:.72rem;cursor:pointer;">🔄 Scan Again</button></div>` : '';
+      const differentiators = ['Check leaf shape', 'Look at lesion color', 'Check stem/root', 'Compare with healthy leaf'];
+      content.innerHTML = lowConfBanner + (alts.length
+        ? alts.map((a, i) => `
+            <div class="rc-list-item" style="flex-direction:column;gap:4px;">
+              <div style="display:flex;align-items:center;gap:10px;width:100%;">
+                <span style="flex:1;font-weight:600;">${escHtml(a.display_name)}</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:#a8ff3e">${a.confidence_pct || Math.round(a.confidence * 100) + '%'}</span>
+              </div>
+              <div style="font-size:.72rem;color:rgba(134,239,172,.45);">🔍 ${differentiators[i] || 'Compare symptoms carefully'}</div>
+            </div>`).join('')
+        : '<div style="color:rgba(134,239,172,.4);font-size:.83rem">No alternatives available.</div>');
+      break;
     }
   }
+}
 
-  content.innerHTML = items.length
-    ? items.map(i => `<div class="rc-list-item"><span class="ri-icon">${icon}</span><span>${escHtml(i)}</span></div>`).join('')
-    : `<div style="color:rgba(134,239,172,.4);font-size:.83rem;padding:8px 0">No data available.</div>`;
+function setDiseaseReminder(diseaseName) {
+  if (!('Notification' in window)) { alert('Notifications not supported in this browser.'); return; }
+  Notification.requestPermission().then(perm => {
+    if (perm === 'granted') {
+      new Notification('🌾 Krishi Rakshak Reminder', {
+        body: `Inspect your crop for ${diseaseName} — peak season is approaching. Check leaves carefully.`,
+        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><path d="M20 4C13 10 11 17 13 24a7 7 0 0014 0c2-7 0-14-7-20z" fill="%2322c55e"/></svg>'
+      });
+      alert('✅ Reminder set! You\'ll be notified before peak disease season.');
+    } else {
+      alert('Please allow notifications to set reminders.');
+    }
+  });
 }
 
 // ── Scan: reset ───────────────────────────────────────────────────────────────
