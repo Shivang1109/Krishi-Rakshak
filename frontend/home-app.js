@@ -105,6 +105,10 @@ function showSection(secId, btn) {
     b.classList.toggle('active', b.dataset.sec === secId);
   });
 
+  // Close mobile sidebar if open
+  document.getElementById('sidebar')?.classList.remove('open');
+  document.getElementById('mob-overlay')?.classList.remove('open');
+
   if (!loadedSections.has(secId)) {
     loadedSections.add(secId);
     lazyLoad(secId);
@@ -193,6 +197,15 @@ function lazyLoad(secId) {
       loadHistory();
       break;
   }
+}
+
+// ── Mobile sidebar toggle ─────────────────────────────────────────────────────
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const overlay = document.getElementById('mob-overlay');
+  const isOpen = sb?.classList.contains('open');
+  sb?.classList.toggle('open', !isOpen);
+  overlay?.classList.toggle('open', !isOpen);
 }
 
 // ── Logout ────────────────────────────────────────────────────────────────────
