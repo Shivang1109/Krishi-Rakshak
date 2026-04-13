@@ -3,9 +3,6 @@ services:
     build: .
     ports:
       - "8000:8000"
-    volumes:
-      - ./krishi_history.db:/app/krishi_history.db
-      - ./forum_uploads:/app/forum_uploads
     environment:
       - PYTHONUNBUFFERED=1
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
